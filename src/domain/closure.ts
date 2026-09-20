@@ -3,6 +3,8 @@
 // requires a reason from the taxonomy, and failing to file one within the
 // SLA has a real cost (escrow forfeiture + accountability score hit).
 
+import { clampAccountabilityScore } from "./accountabilityScore.js";
+
 export const CLOSURE_REASON_TAXONOMY = [
   "NOT_A_ROMANTIC_FIT",
   "DIFFERENT_LIFE_GOALS",
@@ -61,13 +63,6 @@ export interface AccountabilityAdjustment {
   delta: number;
 }
 
-const SCORE_FLOOR = 0;
-const SCORE_CEILING = 100;
-
-function clampScore(score: number): number {
-  return Math.max(SCORE_FLOOR, Math.min(SCORE_CEILING, score));
-}
-
 /** Filing closure on time is scored neutrally — it's the expected behavior,
  * not a reward. Going silent past the SLA is what moves the score. */
 export function applyClosureFiledOnTime(currentScore: number): AccountabilityAdjustment {
@@ -81,7 +76,7 @@ export function applyClosureFiledOnTime(currentScore: number): AccountabilityAdj
  */
 export function applySilenceForfeit(currentScore: number): AccountabilityAdjustment {
   const delta = -15;
-  return { newScore: clampScore(currentScore + delta), delta };
+  return { newScore: clampAccountabilityScore(currentScore + delta), delta };
 }
 
 export interface EscrowOutcome {

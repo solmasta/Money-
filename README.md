@@ -48,7 +48,7 @@ npm test
 | Silence enforcement (scheduled) | `src/domain/silenceEnforcement.ts`, `src/jobs/scheduler.ts`, `scripts/enforce-silence-sweep.ts` |
 | Escrow deposit / commitment device | `src/domain/escrow.ts`, `EscrowLedgerEntry` model |
 | Pay-per-date, success fee, unit economics | `src/domain/payments.ts`, `POST /api/dates/:id/attend`, `POST /api/matches/:id/report-success` |
-| Cancellation ladder (free → fee → suspension) | `src/domain/dates.ts`, `POST /api/dates/:id/cancel` |
+| Cancellation ladder (free → fee → suspension), rolling window + score reset | `src/domain/dates.ts`, `src/domain/accountabilityReset.ts`, `POST /api/dates/:id/cancel` |
 | Mandatory ID + liveness verification | `src/adapters/mock.ts` (`MockVerificationProvider`), `POST /api/users/:id/verify` |
 | Intent locked 30 days, separate matching pools | `src/domain/intent.ts` |
 | Vouching web | `src/routes/vouches.ts`, `Vouch` model |
@@ -103,6 +103,29 @@ npm test
   trigger for the same consequence — both paths call the same
   `enforceSilenceForUser` function, so there's exactly one code path for
   "what happens when someone goes silent."
+- **The cancellation ladder resets on a rolling window, both for the tier
+  and for the score it docks.** `CANCELLATION_WINDOW_DAYS` in
+  `src/domain/dates.ts` (90 days by default) is the single window that
+  governs both halves:
+  - `countCancellationsInWindow` only counts a user's cancellations from
+    the last `CANCELLATION_WINDOW_DAYS` days (via `DateProposal.cancelledAt`)
+    when deciding their ladder tier for the *next* cancellation — an old
+    cancellation stops counting once it ages out, rather than accumulating
+    against you forever.
+  - A SUSPENSION-tier cancellation also dents `accountabilityScore` and
+    records an `AccountabilityLedgerEntry` with an `expiresAt` set to the
+    same window out. `src/domain/accountabilityReset.ts`'s
+    `runAccountabilityResetSweep` finds every such entry whose window has
+    elapsed with no reversal on file yet and credits the score back —
+    idempotent for the same reason the silence sweep is (a reversed entry
+    is excluded from the next sweep).
+
+  Same two ways to run it as the silence sweep, controlled independently:
+  in-process via `src/jobs/scheduler.ts`
+  (`ACCOUNTABILITY_RESET_INTERVAL_MINUTES`, default 60,
+  `ACCOUNTABILITY_RESET_DISABLED` to turn it off), or one-shot via
+  `npm run job:accountability-reset`
+  (`scripts/accountability-reset-sweep.ts`) from an external scheduler.
 
 ## What's intentionally not built yet
 
@@ -124,11 +147,11 @@ Not implemented:
 prisma/schema.prisma   data model
 prisma/seed.ts          demo seed data
 src/adapters/           external-service interfaces + mocks
-src/domain/             business logic (matching, closure, dates, payments, intent, escrow, silence enforcement)
+src/domain/             business logic (matching, closure, dates, payments, intent, escrow, silence enforcement, accountability reset)
 src/routes/             Express route handlers
-src/jobs/scheduler.ts   in-process interval runner for the silence-enforcement sweep
+src/jobs/scheduler.ts   in-process interval runner for both scheduled sweeps
 scripts/                one-shot entry points for external schedulers (cron, k8s CronJob, ...)
 src/server.ts           app entrypoint
 public/index.html       demo UI
-test/                   Vitest tests (pure unit tests + a temp-SQLite integration test for the sweep)
+test/                   Vitest tests (pure unit tests + temp-SQLite integration tests for the sweeps)
 ```

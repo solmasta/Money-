@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { cancellationConsequence, isLateCancellation } from "../src/domain/dates.js";
+import {
+  cancellationConsequence,
+  cancellationWindowStart,
+  isLateCancellation,
+  CANCELLATION_WINDOW_DAYS,
+} from "../src/domain/dates.js";
 
 describe("cancellationConsequence", () => {
   it("is free for the first cancellation", () => {
@@ -14,6 +19,20 @@ describe("cancellationConsequence", () => {
   it("suspends from the fourth cancellation onward", () => {
     expect(cancellationConsequence(3).tier).toBe("SUSPENSION");
     expect(cancellationConsequence(10).tier).toBe("SUSPENSION");
+  });
+});
+
+describe("cancellationWindowStart", () => {
+  it("defaults to CANCELLATION_WINDOW_DAYS before now", () => {
+    const now = new Date("2026-06-01T00:00:00Z");
+    const expected = new Date(now.getTime() - CANCELLATION_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+    expect(cancellationWindowStart(now)).toEqual(expected);
+  });
+
+  it("respects a custom window length", () => {
+    const now = new Date("2026-06-01T00:00:00Z");
+    const expected = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    expect(cancellationWindowStart(now, 30)).toEqual(expected);
   });
 });
 

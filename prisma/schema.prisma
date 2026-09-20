@@ -42,6 +42,7 @@ model User {
   closureEventsReceived  ClosureEvent[] @relation("ClosureRecipient")
 
   escrowLedgerEntries EscrowLedgerEntry[]
+  accountabilityLedgerEntries AccountabilityLedgerEntry[]
   payments           Payment[]
 }
 
@@ -102,6 +103,7 @@ model DateProposal {
   /// "SCHEDULED" | "CONFIRMED_ATTENDED" | "NO_SHOW" | "CANCELLED"
   status      String     @default("SCHEDULED")
   cancelledByUserId String?
+  cancelledAt DateTime?  // set when marked CANCELLED — anchors the cancellation-ladder rolling window
   createdAt   DateTime   @default(now())
   attendedAt  DateTime?  // set when marked CONFIRMED_ATTENDED — starts the closure SLA clock
 
@@ -141,6 +143,25 @@ model EscrowLedgerEntry {
   amountCents Int      // positive = held/credited, negative = forfeited/debited
   reason      String   // "closure_deposit_held" | "closure_deposit_released" | "closure_forfeit" | ...
   createdAt   DateTime @default(now())
+}
+
+// Backs the cancellation ladder's rolling reset window: a SUSPENSION-tier
+// cancellation dents accountabilityScore immediately *and* writes one of
+// these with an expiresAt. Once that expires with no reversal on file, the
+// scheduled sweep (src/domain/accountabilityReset.ts) credits the score
+// back — the same rolling window that ages a cancellation out of the
+// ladder's tier count also ages out the penalty it caused.
+model AccountabilityLedgerEntry {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id])
+  dateProposalId String?
+  delta          Float     // negative = penalty applied, positive = reversal credit
+  /// "cancellation_suspension_penalty" | "cancellation_suspension_penalty_reversed"
+  reason         String
+  createdAt      DateTime  @default(now())
+  expiresAt      DateTime? // when a penalty should auto-reverse; null on reversal entries
+  reversedAt     DateTime? // set once the sweep reverses this penalty
 }
 
 model Payment {

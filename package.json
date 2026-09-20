@@ -12,6 +12,7 @@
     "db:generate": "prisma generate",
     "db:seed": "tsx prisma/seed.ts",
     "job:enforce-silence": "tsx scripts/enforce-silence-sweep.ts",
+    "job:accountability-reset": "tsx scripts/accountability-reset-sweep.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },

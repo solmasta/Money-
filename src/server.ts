@@ -7,7 +7,7 @@ import { datesRouter } from "./routes/dates.js";
 import { successRouter } from "./routes/success.js";
 import { vouchesRouter } from "./routes/vouches.js";
 import { prisma } from "./db.js";
-import { startEnforceSilenceScheduler } from "./jobs/scheduler.js";
+import { startEnforceSilenceScheduler, startAccountabilityResetScheduler } from "./jobs/scheduler.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -36,12 +36,16 @@ if (process.env.NODE_ENV !== "test") {
     console.log(`CLOSURE API listening on http://localhost:${port}`);
   });
 
-  // Disable when running multiple instances of this server behind a load
-  // balancer — run `npm run job:enforce-silence` from a single external
-  // scheduler instead. See src/jobs/scheduler.ts.
+  // Disable either when running multiple instances of this server behind a
+  // load balancer — run the matching `npm run job:*` script from a single
+  // external scheduler instead. See src/jobs/scheduler.ts.
   if (process.env.ENFORCE_SILENCE_DISABLED !== "true") {
     const intervalMinutes = Number(process.env.ENFORCE_SILENCE_INTERVAL_MINUTES ?? 15);
     startEnforceSilenceScheduler(prisma, intervalMinutes);
+  }
+  if (process.env.ACCOUNTABILITY_RESET_DISABLED !== "true") {
+    const intervalMinutes = Number(process.env.ACCOUNTABILITY_RESET_INTERVAL_MINUTES ?? 60);
+    startAccountabilityResetScheduler(prisma, intervalMinutes);
   }
 }
 

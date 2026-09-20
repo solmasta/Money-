@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../db.js";
-import { cancellationConsequence } from "../domain/dates.js";
+import { cancellationConsequence, countCancellationsInWindow } from "../domain/dates.js";
 import { PAY_PER_DATE_CENTS } from "../domain/payments.js";
+import { applyCancellationSuspensionPenalty } from "../domain/accountabilityReset.js";
 import { paymentProvider } from "../adapters/index.js";
 
 export const datesRouter = Router();
@@ -65,9 +66,13 @@ datesRouter.post("/dates/:id/attend", async (req, res) => {
 const cancelSchema = z.object({ userId: z.string() });
 
 /**
- * Cancellation ladder: first cancellation this window is free, the next two
- * incur a fee, further ones suspend the user. `priorCancellationCount` is
- * computed from cancelled DateProposals across all of this user's matches.
+ * Cancellation ladder: first cancellation in the rolling window is free,
+ * the next two incur a fee, further ones suspend the user.
+ * `priorCancellationCount` only counts cancellations within
+ * CANCELLATION_WINDOW_DAYS — an older cancellation has aged out of the
+ * ladder (and, if it was the one that triggered a SUSPENSION penalty, that
+ * penalty auto-reverses around the same time — see
+ * src/domain/accountabilityReset.ts).
  */
 datesRouter.post("/dates/:id/cancel", async (req, res) => {
   const parsed = cancelSchema.safeParse(req.body);
@@ -76,12 +81,8 @@ datesRouter.post("/dates/:id/cancel", async (req, res) => {
   const dateProposal = await prisma.dateProposal.findUnique({ where: { id: req.params.id } });
   if (!dateProposal) return res.status(404).json({ error: "not found" });
 
-  const priorCancellationCount = await prisma.dateProposal.count({
-    where: {
-      status: "CANCELLED",
-      cancelledByUserId: parsed.data.userId,
-    },
-  });
+  const now = new Date();
+  const priorCancellationCount = await countCancellationsInWindow(prisma, parsed.data.userId, now);
 
   const consequence = cancellationConsequence(priorCancellationCount);
 
@@ -105,15 +106,12 @@ datesRouter.post("/dates/:id/cancel", async (req, res) => {
 
   const updated = await prisma.dateProposal.update({
     where: { id: dateProposal.id },
-    data: { status: "CANCELLED", cancelledByUserId: parsed.data.userId },
+    data: { status: "CANCELLED", cancelledByUserId: parsed.data.userId, cancelledAt: now },
   });
 
   const userUpdate =
     consequence.tier === "SUSPENSION"
-      ? await prisma.user.update({
-          where: { id: parsed.data.userId },
-          data: { accountabilityScore: { decrement: 25 } },
-        })
+      ? await applyCancellationSuspensionPenalty(prisma, parsed.data.userId, dateProposal.id, now)
       : null;
 
   res.json({ dateProposal: updated, consequence, payment, userUpdate });
