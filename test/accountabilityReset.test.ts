@@ -1,9 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
-import { execSync } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import path from "node:path";
-import { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "@prisma/client";
+import { setupTestDatabase, type TestDatabase } from "./helpers/testDb.js";
 import { countCancellationsInWindow, CANCELLATION_WINDOW_DAYS } from "../src/domain/dates.js";
 import {
   applyCancellationSuspensionPenalty,
@@ -12,27 +9,19 @@ import {
 } from "../src/domain/accountabilityReset.js";
 
 // Exercises the windowed cancellation count and the penalty-reset sweep
-// against a real (temporary) SQLite database — both are cross-row queries
+// against a real, isolated Postgres schema — both are cross-row queries
 // that aren't meaningfully testable as pure functions.
 
-let dir: string;
-let dbUrl: string;
+let db: TestDatabase;
 let prisma: PrismaClient;
 
-beforeAll(() => {
-  dir = mkdtempSync(path.join(tmpdir(), "closure-test-"));
-  dbUrl = `file:${path.join(dir, "test.db")}`;
-  execSync("npx prisma db push --skip-generate", {
-    cwd: path.resolve(__dirname, ".."),
-    env: { ...process.env, DATABASE_URL: dbUrl },
-    stdio: "pipe",
-  });
-  prisma = new PrismaClient({ datasourceUrl: dbUrl });
+beforeAll(async () => {
+  db = await setupTestDatabase();
+  prisma = db.prisma;
 });
 
 afterAll(async () => {
-  await prisma.$disconnect();
-  rmSync(dir, { recursive: true, force: true });
+  await db.teardown();
 });
 
 beforeEach(async () => {

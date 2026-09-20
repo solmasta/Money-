@@ -1,18 +1,24 @@
 // CLOSURE data model.
-// SQLite for local/dev simplicity. Swap provider to "postgresql" + add
-// pgvector for ScalarVector fields when deploying (see docs/ARCHITECTURE.md).
+// Postgres for real persistence (originally scaffolded on SQLite — see git
+// history if you need the zero-config single-file version back).
 //
-// SQLite's Prisma connector doesn't support native enums, so every field
-// that would be one is a String constrained by the TS union types in
-// src/domain/*.ts (documented alongside each field below). Postgres would
-// let these become real `enum` blocks.
+// Status/category fields are still plain String columns constrained by the
+// TS union types in src/domain/*.ts (documented alongside each field
+// below), not real Postgres `enum` types. That was a SQLite limitation
+// originally; kept as String here too, deliberately, so this migration
+// only changes the connector, not every route/domain function's types —
+// converting to real enums is a separate, larger refactor if wanted later.
+//
+// A real vector column (pgvector) for PreferenceProfile.vector is a
+// similarly separate future step — it's still a JSON-encoded float array
+// compared in application code (src/domain/matching.ts), same as before.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 

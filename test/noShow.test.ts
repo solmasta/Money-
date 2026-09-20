@@ -1,9 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
-import { execSync } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import path from "node:path";
-import { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "@prisma/client";
+import { setupTestDatabase, type TestDatabase } from "./helpers/testDb.js";
 import { canMarkNoShow, recordNoShow } from "../src/domain/noShow.js";
 import { holdClosureDeposit, releaseClosureDepositOnSuccess } from "../src/domain/escrow.js";
 import { findSilenceObligations } from "../src/domain/silenceEnforcement.js";
@@ -39,26 +36,18 @@ describe("canMarkNoShow (pure)", () => {
 });
 
 // The rest exercises recordNoShow and its interplay with other escrow
-// resolution paths against a real (temporary) SQLite database.
+// resolution paths against a real, isolated Postgres schema.
 
-let dir: string;
-let dbUrl: string;
+let db: TestDatabase;
 let prisma: PrismaClient;
 
-beforeAll(() => {
-  dir = mkdtempSync(path.join(tmpdir(), "closure-test-"));
-  dbUrl = `file:${path.join(dir, "test.db")}`;
-  execSync("npx prisma db push --skip-generate", {
-    cwd: path.resolve(__dirname, ".."),
-    env: { ...process.env, DATABASE_URL: dbUrl },
-    stdio: "pipe",
-  });
-  prisma = new PrismaClient({ datasourceUrl: dbUrl });
+beforeAll(async () => {
+  db = await setupTestDatabase();
+  prisma = db.prisma;
 });
 
 afterAll(async () => {
-  await prisma.$disconnect();
-  rmSync(dir, { recursive: true, force: true });
+  await db.teardown();
 });
 
 beforeEach(async () => {

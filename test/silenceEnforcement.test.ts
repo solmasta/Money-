@@ -1,9 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
-import { execSync } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import path from "node:path";
-import { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "@prisma/client";
+import { setupTestDatabase, type TestDatabase } from "./helpers/testDb.js";
 import {
   runEnforceSilenceSweep,
   findSilenceObligations,
@@ -13,28 +10,20 @@ import {
 import { holdClosureDeposit, releaseClosureDepositOnSuccess } from "../src/domain/escrow.js";
 import { CLOSURE_SLA_HOURS, CLOSURE_DEPOSIT_CENTS } from "../src/domain/closure.js";
 
-// Exercises the sweep against a real (temporary) SQLite database, since its
+// Exercises the sweep against a real, isolated Postgres schema, since its
 // logic is a cross-table query that isn't meaningfully testable as pure
 // functions the way the rest of src/domain is.
 
-let dir: string;
-let dbUrl: string;
+let db: TestDatabase;
 let prisma: PrismaClient;
 
-beforeAll(() => {
-  dir = mkdtempSync(path.join(tmpdir(), "closure-test-"));
-  dbUrl = `file:${path.join(dir, "test.db")}`;
-  execSync("npx prisma db push --skip-generate", {
-    cwd: path.resolve(__dirname, ".."),
-    env: { ...process.env, DATABASE_URL: dbUrl },
-    stdio: "pipe",
-  });
-  prisma = new PrismaClient({ datasourceUrl: dbUrl });
+beforeAll(async () => {
+  db = await setupTestDatabase();
+  prisma = db.prisma;
 });
 
 afterAll(async () => {
-  await prisma.$disconnect();
-  rmSync(dir, { recursive: true, force: true });
+  await db.teardown();
 });
 
 beforeEach(async () => {

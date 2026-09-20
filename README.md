@@ -18,12 +18,19 @@ that layer changes.
 
 ## Quickstart
 
+Needs a real Postgres database — this isn't a zero-config single-file setup
+(it originally was, on SQLite; see the note in `prisma/schema.prisma` for
+why that changed). Point `DATABASE_URL` at any Postgres instance you can
+create/drop tables in — a local one, a Docker container, or a hosted free
+tier (this project's own deployed copy uses a free Render Postgres
+instance).
+
 ```bash
 npm install
-cp .env.example .env
-npm run db:push      # creates prisma/dev.db and applies the schema
-npm run db:seed      # seeds two verified, pre-matched demo users
-npm run dev           # http://localhost:3000
+cp .env.example .env   # then fill in DATABASE_URL
+npm run db:push        # applies the schema to that database
+npm run db:seed        # seeds two verified, pre-matched demo users
+npm run dev             # http://localhost:3000
 ```
 
 Open `http://localhost:3000` for a step-by-step demo UI that walks the full
@@ -32,11 +39,20 @@ match → approve → schedule/attend a date → file a Closure Guarantee event.
 It also has a button that deliberately tries to skip the closure reason, to
 show the API rejecting it.
 
-Run the test suite (pure domain-logic unit tests, no DB required):
+Run the test suite:
 
 ```bash
 npm test
 ```
+
+Most of it is pure domain-logic unit tests with no DB involved. The
+integration tests (matching, silence enforcement, accountability reset,
+no-shows, escrow) need a reachable Postgres — set `TEST_DATABASE_URL` (or
+just reuse `DATABASE_URL`) to one you're fine with tests creating and
+dropping schemas in. Each test file gets its own uniquely-named schema via
+`test/helpers/setupTestDatabase` (`?schema=test_xxx` on the connection
+string), so they never collide with your dev data or each other, even
+running concurrently.
 
 ## How the spec maps to the code
 
@@ -56,26 +72,42 @@ npm test
 
 ## Architecture notes
 
-- **Database**: SQLite via Prisma for zero-config local dev
-  (`prisma/schema.prisma`). SQLite's Prisma connector doesn't support native
-  enums, so status/category fields are `String` columns constrained by the
-  TypeScript union types documented next to each field — switch the
-  datasource `provider` to `"postgresql"` for production and those can
-  become real Prisma `enum` blocks if you want the extra DB-level
-  constraint.
+- **Database**: Postgres via Prisma (`prisma/schema.prisma`). This started
+  as a SQLite scaffold for zero-config local dev; it moved to Postgres
+  specifically so the deployed copy's data survives a restart or redeploy
+  (SQLite on a normal web host's ephemeral filesystem doesn't). Status/
+  category fields are still plain `String` columns constrained by the
+  TypeScript union types documented next to each field, not real Postgres
+  `enum` types — that was originally a SQLite limitation, kept as-is
+  deliberately so this migration only changed the connector, not every
+  route/domain function's types. Converting to real enums is a separate,
+  optional refactor. If you're running this project's own deployed copy:
+  its database is a free-tier Render Postgres instance, which Render
+  deletes 30 days after creation unless upgraded to a paid plan — that's a
+  hosting-tier limit, not something this codebase controls.
 - **Preference vectors**: stored as JSON-encoded float arrays and compared
   with cosine similarity in `src/domain/matching.ts`. The mock extractor
   (`hashEmbed` in `src/adapters/mock.ts`) is a deterministic bag-of-words
   hash standing in for a real embedding model — swap it for an actual
-  embeddings call and move the column to `pgvector` when moving off SQLite;
-  the matching code only depends on "fixed-length vector + cosine
-  similarity," so nothing else changes.
-- **Domain logic is pure**: everything in `src/domain/*.ts` takes plain
-  data in and returns plain data out — no Prisma, no Express. That's what
-  makes it fully unit-testable without a database (see `test/*.test.ts`),
-  and it's the part of the codebase that encodes the actual product
-  decisions (dealbreaker vetoes, the closure SLA, the cancellation ladder,
-  the 3x unit-economics guardrail).
+  embeddings call and move the column to a real `pgvector` type (now that
+  the datasource is Postgres) if you want DB-level similarity search; the
+  matching code only depends on "fixed-length vector + cosine similarity,"
+  so nothing else changes.
+- **Most domain logic is pure**: `src/domain/matching.ts`,
+  `src/domain/payments.ts`, `src/domain/intent.ts`, and the standalone
+  calculation functions in `closure.ts`/`dates.ts` take plain data in and
+  return plain data out — no Prisma, no Express. That's what makes them
+  unit-testable with zero external dependencies (`test/closure.test.ts`,
+  `test/dates.test.ts`, `test/matching.test.ts`, `test/intent.test.ts`,
+  `test/payments.test.ts`), and it's the part of the codebase that encodes
+  the actual product decisions (dealbreaker vetoes, the closure SLA, the
+  cancellation ladder, the 3x unit-economics guardrail). The rest of
+  `src/domain/*.ts` — anything that's a cross-row query or a multi-step
+  ledger operation (silence enforcement, escrow resolution, no-shows,
+  accountability reset) — takes a `PrismaClient` and is exercised against
+  a real, isolated Postgres schema instead (`test/silenceEnforcement.test.ts`,
+  `test/escrow.test.ts`, `test/noShow.test.ts`,
+  `test/accountabilityReset.test.ts`; see `test/helpers/testDb.ts`).
 - **The Closure Guarantee is enforced, not just documented**: there is no
   API path that ends a match without a valid taxonomy reason —
   `fileClosure` throws on a missing or invalid reason, and the route layer
@@ -219,5 +251,6 @@ src/jobs/scheduler.ts   in-process interval runner for both scheduled sweeps
 scripts/                one-shot entry points for external schedulers (cron, k8s CronJob, ...)
 src/server.ts           app entrypoint
 public/index.html       demo UI
-test/                   Vitest tests (pure unit tests + temp-SQLite integration tests for the sweeps)
+test/                   Vitest tests (pure unit tests + Postgres integration tests, isolated per-schema)
+test/helpers/testDb.ts  per-test-file isolated Postgres schema setup/teardown
 ```
