@@ -47,7 +47,7 @@ npm test
 | **Closure Guarantee** (the differentiator) | `src/domain/closure.ts` — reason taxonomy, SLA, escrow resolution, accountability score; `POST /api/matches/:id/closure` |
 | Silence enforcement (scheduled) | `src/domain/silenceEnforcement.ts`, `src/jobs/scheduler.ts`, `scripts/enforce-silence-sweep.ts` |
 | Escrow deposit / commitment device | `src/domain/escrow.ts`, `EscrowLedgerEntry` model |
-| Pay-per-date, success fee, unit economics | `src/domain/payments.ts`, `POST /api/dates/:id/attend`, `POST /api/matches/:id/report-success` |
+| Pay-per-date, success fee, unit economics | `src/domain/payments.ts`, `POST /api/dates/:id/attend`, `POST /api/matches/:id/report-success` (also resolves escrow — see below) |
 | Cancellation ladder (free → fee → suspension), rolling window + score reset | `src/domain/dates.ts`, `src/domain/accountabilityReset.ts`, `POST /api/dates/:id/cancel` |
 | Mandatory ID + liveness verification | `src/adapters/mock.ts` (`MockVerificationProvider`), `POST /api/users/:id/verify` |
 | Intent locked 30 days, separate matching pools | `src/domain/intent.ts` |
@@ -126,6 +126,20 @@ npm test
   `ACCOUNTABILITY_RESET_DISABLED` to turn it off), or one-shot via
   `npm run job:accountability-reset`
   (`scripts/accountability-reset-sweep.ts`) from an external scheduler.
+- **Reporting success also resolves escrow — it's a third way a match ends,
+  besides an explicit closure filing or silence enforcement.** A held
+  closure deposit only ever gets resolved along one of those three paths;
+  without this, a match that succeeded would leave its depositors' escrow
+  stuck unresolved forever, since nobody files a `ClosureEvent` when things
+  work out. `POST /api/matches/:id/report-success`
+  (`src/routes/success.ts`) charges the success fee for both users, then
+  calls `releaseClosureDepositOnSuccess` (`src/domain/escrow.ts`) for each
+  side — releasing a held deposit back if one exists, and a no-op for a
+  side with no deposit (never approved) or one already resolved some other
+  way (an explicit closure filing, or a silence forfeit if it raced with
+  the success report). The route also rejects a second report on an
+  already-`CLOSED` match with 409, so neither the fee nor the escrow
+  release can double-fire.
 
 ## What's intentionally not built yet
 

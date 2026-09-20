@@ -54,3 +54,40 @@ export async function resolveClosureDeposit(
     },
   });
 }
+
+const RESOLVED_REASONS = ["closure_deposit_released", "closure_forfeit", "closure_deposit_released_success"];
+
+/**
+ * Releases a user's closure-commitment deposit because the match succeeded
+ * — reported as a relationship (src/routes/success.ts), not closed via the
+ * Closure Guarantee. Nobody owes closure here: the match worked, so there's
+ * nothing to explain. A user who never approved (and so never had a
+ * deposit held) or whose deposit was already resolved some other way
+ * (an explicit closure filing, or a silence-enforcement forfeit — possible
+ * if the two events race) is left alone; this returns null rather than
+ * creating a spurious ledger entry.
+ */
+export async function releaseClosureDepositOnSuccess(
+  prisma: PrismaClient,
+  userId: string,
+  matchId: string,
+) {
+  const held = await prisma.escrowLedgerEntry.findFirst({
+    where: { userId, matchId, reason: "closure_deposit_held" },
+  });
+  if (!held) return null;
+
+  const alreadyResolved = await prisma.escrowLedgerEntry.findFirst({
+    where: { userId, matchId, reason: { in: RESOLVED_REASONS } },
+  });
+  if (alreadyResolved) return null;
+
+  return prisma.escrowLedgerEntry.create({
+    data: {
+      userId,
+      matchId,
+      amountCents: CLOSURE_DEPOSIT_CENTS,
+      reason: "closure_deposit_released_success",
+    },
+  });
+}
