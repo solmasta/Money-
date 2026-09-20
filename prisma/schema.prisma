@@ -1,0 +1,159 @@
+// CLOSURE data model.
+// SQLite for local/dev simplicity. Swap provider to "postgresql" + add
+// pgvector for ScalarVector fields when deploying (see docs/ARCHITECTURE.md).
+//
+// SQLite's Prisma connector doesn't support native enums, so every field
+// that would be one is a String constrained by the TS union types in
+// src/domain/*.ts (documented alongside each field below). Postgres would
+// let these become real `enum` blocks.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String   @id @default(cuid())
+  email              String   @unique
+  displayName        String
+  createdAt          DateTime @default(now())
+
+  /// "UNVERIFIED" | "PENDING" | "VERIFIED" | "FAILED"
+  verificationStatus String   @default("UNVERIFIED")
+  accountabilityScore Float   @default(100) // starts at 100, moves with behavior
+
+  /// "CASUAL" | "LONG_TERM" | "MARRIAGE_MINDED" | "UNSURE" — see src/domain/intent.ts
+  intent             String   @default("UNSURE")
+  intentLockedAt     DateTime?
+  intentLockDays     Int      @default(30)
+
+  preferenceProfile  PreferenceProfile?
+  vouches            Vouch[]  @relation("VouchesReceived")
+  vouchesGiven       Vouch[]  @relation("VouchesGiven")
+
+  matchesAsA         Match[]  @relation("MatchUserA")
+  matchesAsB         Match[]  @relation("MatchUserB")
+
+  closureEventsSent      ClosureEvent[] @relation("ClosureSender")
+  closureEventsReceived  ClosureEvent[] @relation("ClosureRecipient")
+
+  escrowLedgerEntries EscrowLedgerEntry[]
+  payments           Payment[]
+}
+
+// One row per user: the output of the voice interview, structured by the
+// LLM extraction step. `dealbreakers` and `values` are JSON string arrays;
+// `vector` is a JSON-encoded float array standing in for a pgvector column.
+model PreferenceProfile {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id])
+
+  values         String   // JSON string[]
+  dealbreakers   String   // JSON string[]
+  attachmentStyle String  // e.g. "secure", "anxious", "avoidant", "fearful-avoidant"
+  relationshipHistorySummary String
+  vector         String   // JSON number[] — compatibility embedding
+  rawTranscript  String   // full interview transcript, for future re-extraction
+
+  updatedAt      DateTime @updatedAt
+}
+
+model Vouch {
+  id           String   @id @default(cuid())
+  voucherId    String
+  voucher      User     @relation("VouchesGiven", fields: [voucherId], references: [id])
+  voucheeId    String
+  vouchee      User     @relation("VouchesReceived", fields: [voucheeId], references: [id])
+  statement    String
+  createdAt    DateTime @default(now())
+
+  @@unique([voucherId, voucheeId])
+}
+
+model Match {
+  id              String      @id @default(cuid())
+  userAId         String
+  userA           User        @relation("MatchUserA", fields: [userAId], references: [id])
+  userBId         String
+  userB           User        @relation("MatchUserB", fields: [userBId], references: [id])
+
+  compatibilityScore Float
+  scoreBreakdown  String      // JSON — per-dimension contributions, for explainability
+  /// "PROPOSED" | "PENDING_APPROVAL" | "DECLINED" | "DATE_SCHEDULED" | "DATE_COMPLETED" | "CLOSED"
+  status          String      @default("PROPOSED")
+  createdAt       DateTime    @default(now())
+
+  dates           DateProposal[]
+  closureEvents   ClosureEvent[]
+
+  @@unique([userAId, userBId])
+}
+
+model DateProposal {
+  id          String     @id @default(cuid())
+  matchId     String
+  match       Match      @relation(fields: [matchId], references: [id])
+  scheduledAt DateTime
+  /// "SCHEDULED" | "CONFIRMED_ATTENDED" | "NO_SHOW" | "CANCELLED"
+  status      String     @default("SCHEDULED")
+  cancelledByUserId String?
+  createdAt   DateTime   @default(now())
+
+  payment     Payment?
+}
+
+// The Closure Guarantee. Created whenever a match/date ends without moving
+// forward. Silence is not modeled as a valid end state — every terminal
+// transition on a Match must produce exactly one of these per direction
+// that isn't continuing.
+model ClosureEvent {
+  id            String                 @id @default(cuid())
+  matchId       String
+  match         Match                  @relation(fields: [matchId], references: [id])
+  senderId      String
+  sender        User                   @relation("ClosureSender", fields: [senderId], references: [id])
+  recipientId   String
+  recipient     User                   @relation("ClosureRecipient", fields: [recipientId], references: [id])
+
+  /// One of CLOSURE_REASON_TAXONOMY in src/domain/closure.ts
+  reasonCategory String
+  reasonNote     String?               // optional free text, sender's choice
+  isAnonymous    Boolean               @default(false)
+  deliveredAt    DateTime?             // null until the message is actually sent
+  createdAt      DateTime              @default(now())
+}
+
+// Escrow deposits back the "give closure" commitment device: a deposit is
+// held per active match and forfeited to the counterparty (as a credit) if
+// the holder goes silent past the closure SLA instead of filing a
+// ClosureEvent.
+model EscrowLedgerEntry {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  matchId     String?
+  amountCents Int      // positive = held/credited, negative = forfeited/debited
+  reason      String   // "closure_deposit_held" | "closure_deposit_released" | "closure_forfeit" | ...
+  createdAt   DateTime @default(now())
+}
+
+model Payment {
+  id             String        @id @default(cuid())
+  userId         String
+  user           User          @relation(fields: [userId], references: [id])
+  dateProposalId String?       @unique
+  dateProposal   DateProposal? @relation(fields: [dateProposalId], references: [id])
+
+  /// "PAY_PER_DATE" | "SUCCESS_FEE" | "CANCELLATION_FEE"
+  type           String
+  amountCents    Int
+  /// "PENDING" | "SUCCEEDED" | "FAILED" | "REFUNDED"
+  status         String        @default("PENDING")
+  providerRef    String?       // Stripe PaymentIntent id, etc.
+  createdAt      DateTime      @default(now())
+}

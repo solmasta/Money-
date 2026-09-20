@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CLOSURE — the dating app designed to be deleted</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0b0b0c;
+    --panel: #151517;
+    --border: #2a2a2e;
+    --text: #e8e8ea;
+    --muted: #8a8a90;
+    --accent: #ff5c5c;
+    --ok: #5cff9d;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    line-height: 1.5;
+  }
+  header {
+    padding: 2rem 1.5rem 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 { margin: 0; font-size: 1.4rem; letter-spacing: 0.08em; }
+  header p { margin: 0.4rem 0 0; color: var(--muted); }
+  main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 1.5rem;
+    display: grid;
+    gap: 1.25rem;
+  }
+  section.step {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+  }
+  section.step h2 {
+    margin: 0 0 0.75rem;
+    font-size: 0.95rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  label { display: block; font-size: 0.8rem; color: var(--muted); margin-top: 0.6rem; }
+  input, textarea, select {
+    width: 100%;
+    background: #0e0e10;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.5rem;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    margin-top: 0.2rem;
+  }
+  textarea { min-height: 4.5rem; resize: vertical; }
+  button {
+    margin-top: 0.75rem;
+    background: var(--accent);
+    color: #1a0a0a;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  button.secondary {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+    font-weight: 400;
+  }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  pre.out {
+    background: #0e0e10;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.6rem;
+    font-size: 0.75rem;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin-top: 0.6rem;
+    color: var(--ok);
+  }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    margin-left: 0.4rem;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>CLOSURE</h1>
+  <p>the dating app designed to be deleted. — "we win when you leave."</p>
+</header>
+<main>
+  <section class="step">
+    <h2>1. Create two users <span class="badge">POST /api/users</span></h2>
+    <div class="row">
+      <div>
+        <label>User A email <input id="aEmail" value="alice@example.com" /></label>
+        <label>User A name <input id="aName" value="Alice" /></label>
+        <button onclick="createUser('a')">Create User A</button>
+      </div>
+      <div>
+        <label>User B email <input id="bEmail" value="bob@example.com" /></label>
+        <label>User B name <input id="bName" value="Bob" /></label>
+        <button onclick="createUser('b')">Create User B</button>
+      </div>
+    </div>
+    <pre class="out" id="out-users"></pre>
+  </section>
+
+  <section class="step">
+    <h2>2. Voice interview (stand-in transcript) <span class="badge">POST /api/users/:id/interview</span></h2>
+    <div class="row">
+      <div>
+        <label>User A says <textarea id="aTranscript">I value honesty and family above all. I am looking for a long-term relationship, something serious. I am pretty secure and independent. Smoking is a dealbreaker for me.</textarea></label>
+        <button onclick="interview('a')">Run interview A</button>
+      </div>
+      <div>
+        <label>User B says <textarea id="bTranscript">Honesty and family matter a lot to me too. I want a long-term relationship, something serious and stable. I feel pretty secure in relationships.</textarea></label>
+        <button onclick="interview('b')">Run interview B</button>
+      </div>
+    </div>
+    <pre class="out" id="out-interview"></pre>
+  </section>
+
+  <section class="step">
+    <h2>3. Verification <span class="badge">POST /api/users/:id/verify</span></h2>
+    <button onclick="verify('a')">Verify A</button>
+    <button onclick="verify('b')">Verify B</button>
+    <pre class="out" id="out-verify"></pre>
+  </section>
+
+  <section class="step">
+    <h2>4. Agent-to-agent negotiation — one match, not a feed <span class="badge">POST /api/matches/find/:userId</span></h2>
+    <button onclick="findMatch()">Find best match for A</button>
+    <pre class="out" id="out-match"></pre>
+  </section>
+
+  <section class="step">
+    <h2>5. Approve match (both sides) <span class="badge">POST /api/matches/:id/approve</span></h2>
+    <button onclick="approve('a')">A approves</button>
+    <button onclick="approve('b')">B approves</button>
+    <pre class="out" id="out-approve"></pre>
+  </section>
+
+  <section class="step">
+    <h2>6. Schedule + attend a date <span class="badge">pay-per-date charges on attendance</span></h2>
+    <button onclick="scheduleDate()">Schedule date</button>
+    <button onclick="attendDate()">Mark attended (charges both)</button>
+    <pre class="out" id="out-date"></pre>
+  </section>
+
+  <section class="step">
+    <h2>7. The Closure Guarantee <span class="badge">POST /api/matches/:id/closure</span></h2>
+    <label>Reason
+      <select id="reason">
+        <option>NOT_A_ROMANTIC_FIT</option>
+        <option>DIFFERENT_LIFE_GOALS</option>
+        <option>DIFFERENT_INTENT</option>
+        <option selected>LACK_OF_CHEMISTRY</option>
+        <option>LOGISTICS_DISTANCE</option>
+        <option>COMMUNICATION_STYLE</option>
+        <option>VALUES_MISMATCH</option>
+        <option>ALREADY_SEEING_SOMEONE_ELSE</option>
+        <option>NOT_READY_TO_DATE</option>
+        <option>OTHER</option>
+      </select>
+    </label>
+    <label><input type="checkbox" id="anon" style="width:auto;display:inline-block" /> send anonymously</label>
+    <label>Note (optional, hidden if anonymous) <input id="note" value="Great person, just no romantic spark." /></label>
+    <button onclick="closeMatch()">A files closure — no silence allowed</button>
+    <button class="secondary" onclick="badClosure()">Try skipping the reason (should fail)</button>
+    <pre class="out" id="out-closure"></pre>
+  </section>
+</main>
+<script>
+const state = { a: {}, b: {}, matchId: null, dateId: null };
+
+async function api(method, path, body) {
+  const res = await fetch(path, {
+    method,
+    headers: body ? { "Content-Type": "application/json" } : undefined,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const data = await res.json();
+  return { ok: res.ok, data };
+}
+
+function show(id, value) {
+  document.getElementById(id).textContent =
+    typeof value === "string" ? value : JSON.stringify(value, null, 2);
+}
+
+async function createUser(who) {
+  const email = document.getElementById(who + "Email").value;
+  const displayName = document.getElementById(who + "Name").value;
+  const { data } = await api("POST", "/api/users", { email, displayName });
+  state[who].id = data.id;
+  show("out-users", { a: state.a.id, b: state.b.id, last: data });
+}
+
+async function interview(who) {
+  const text = document.getElementById(who + "Transcript").value;
+  const transcript = [
+    { speaker: "agent", text: "What matters most to you?" },
+    { speaker: "user", text },
+  ];
+  const { data } = await api("POST", `/api/users/${state[who].id}/interview`, { transcript });
+  show("out-interview", data);
+}
+
+async function verify(who) {
+  const { data } = await api("POST", `/api/users/${state[who].id}/verify`, {
+    documentRef: "doc-" + who,
+    selfieRef: "selfie-" + who,
+  });
+  show("out-verify", data);
+}
+
+async function findMatch() {
+  const { data } = await api("POST", `/api/matches/find/${state.a.id}`);
+  state.matchId = data.id;
+  show("out-match", data);
+}
+
+async function approve(who) {
+  const { data } = await api("POST", `/api/matches/${state.matchId}/approve`, { userId: state[who].id });
+  show("out-approve", data);
+}
+
+async function scheduleDate() {
+  const scheduledAt = new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString();
+  const { data } = await api("POST", `/api/matches/${state.matchId}/dates`, { scheduledAt });
+  state.dateId = data.id;
+  show("out-date", data);
+}
+
+async function attendDate() {
+  const { data } = await api("POST", `/api/dates/${state.dateId}/attend`);
+  show("out-date", data);
+}
+
+async function closeMatch() {
+  const reasonCategory = document.getElementById("reason").value;
+  const isAnonymous = document.getElementById("anon").checked;
+  const reasonNote = document.getElementById("note").value;
+  const { data } = await api("POST", `/api/matches/${state.matchId}/closure`, {
+    userId: state.a.id,
+    reasonCategory,
+    isAnonymous,
+    reasonNote,
+  });
+  show("out-closure", data);
+}
+
+async function badClosure() {
+  const { ok, data } = await api("POST", `/api/matches/${state.matchId}/closure`, {
+    userId: state.a.id,
+    reasonCategory: "GHOSTED_ON_PURPOSE",
+  });
+  show("out-closure", { rejectedAsExpected: !ok, response: data });
+}
+</script>
+</body>
+</html>
