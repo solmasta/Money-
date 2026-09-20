@@ -79,6 +79,21 @@ export function applySilenceForfeit(currentScore: number): AccountabilityAdjustm
   return { newScore: clampAccountabilityScore(currentScore + delta), delta };
 }
 
+/**
+ * A no-show costs more accountability score than silence: standing someone
+ * up with no warning is a worse breach than failing to explain, after the
+ * fact, why a date that actually happened didn't lead anywhere. Permanent
+ * like applySilenceForfeit — no reset window, unlike the cancellation
+ * ladder's SUSPENSION penalty (src/domain/accountabilityReset.ts), which
+ * exists precisely to let occasional cancellations recover over time. A
+ * no-show isn't a ladder tier; it's a one-off breach with its own,
+ * harsher, non-recoverable consequence.
+ */
+export function applyNoShowForfeit(currentScore: number): AccountabilityAdjustment {
+  const delta = -30;
+  return { newScore: clampAccountabilityScore(currentScore + delta), delta };
+}
+
 export interface EscrowOutcome {
   filerAmountCents: number; // >0 released back to filer, 0 if forfeited
   counterpartyCreditCents: number; // >0 if forfeited to the other party

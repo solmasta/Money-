@@ -4,6 +4,7 @@ import { prisma } from "../db.js";
 import { cancellationConsequence, countCancellationsInWindow } from "../domain/dates.js";
 import { PAY_PER_DATE_CENTS } from "../domain/payments.js";
 import { applyCancellationSuspensionPenalty } from "../domain/accountabilityReset.js";
+import { canMarkNoShow, recordNoShow } from "../domain/noShow.js";
 import { paymentProvider } from "../adapters/index.js";
 
 export const datesRouter = Router();
@@ -115,4 +116,56 @@ datesRouter.post("/dates/:id/cancel", async (req, res) => {
       : null;
 
   res.json({ dateProposal: updated, consequence, payment, userUpdate });
+});
+
+const noShowSchema = z.object({ reportedByUserId: z.string() });
+
+/**
+ * Reported after the fact by whoever showed up: the other side of the
+ * match is marked NO_SHOW. Distinct from — and harsher than — the
+ * cancellation ladder: a no-show forfeits the full closure-commitment
+ * deposit outright rather than a graduated fee, and costs more
+ * accountability score than any single cancellation does (see
+ * src/domain/noShow.ts and applyNoShowForfeit in src/domain/closure.ts).
+ * Only valid while the date is still SCHEDULED and its time has passed —
+ * this doesn't adjudicate a "who really no-showed" dispute.
+ */
+datesRouter.post("/dates/:id/no-show", async (req, res) => {
+  const parsed = noShowSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+
+  const dateProposal = await prisma.dateProposal.findUnique({
+    where: { id: req.params.id },
+    include: { match: true },
+  });
+  if (!dateProposal) return res.status(404).json({ error: "not found" });
+
+  const { userAId, userBId } = dateProposal.match;
+  if (![userAId, userBId].includes(parsed.data.reportedByUserId)) {
+    return res.status(403).json({ error: "user is not part of this match" });
+  }
+
+  const now = new Date();
+  if (!canMarkNoShow(dateProposal.status, dateProposal.scheduledAt, now)) {
+    return res.status(409).json({
+      error:
+        dateProposal.status !== "SCHEDULED"
+          ? `date is already ${dateProposal.status}, not eligible for a no-show report`
+          : "date's scheduled time hasn't passed yet",
+    });
+  }
+
+  const noShowUserId = parsed.data.reportedByUserId === userAId ? userBId : userAId;
+  const result = await recordNoShow(
+    prisma,
+    dateProposal.id,
+    dateProposal.matchId,
+    noShowUserId,
+    parsed.data.reportedByUserId,
+    now,
+  );
+
+  const updated = await prisma.dateProposal.findUniqueOrThrow({ where: { id: dateProposal.id } });
+
+  res.json({ dateProposal: updated, ...result });
 });

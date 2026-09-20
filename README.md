@@ -49,6 +49,7 @@ npm test
 | Escrow deposit / commitment device | `src/domain/escrow.ts`, `EscrowLedgerEntry` model |
 | Pay-per-date, success fee, unit economics | `src/domain/payments.ts`, `POST /api/dates/:id/attend`, `POST /api/matches/:id/report-success` (also resolves escrow — see below) |
 | Cancellation ladder (free → fee → suspension), rolling window + score reset | `src/domain/dates.ts`, `src/domain/accountabilityReset.ts`, `POST /api/dates/:id/cancel` |
+| No-show handling (full escrow forfeiture, harsher than the ladder) | `src/domain/noShow.ts`, `POST /api/dates/:id/no-show` |
 | Mandatory ID + liveness verification | `src/adapters/mock.ts` (`MockVerificationProvider`), `POST /api/users/:id/verify` |
 | Intent locked 30 days, separate matching pools | `src/domain/intent.ts` |
 | Vouching web | `src/routes/vouches.ts`, `Vouch` model |
@@ -140,6 +141,28 @@ npm test
   the success report). The route also rejects a second report on an
   already-`CLOSED` match with 409, so neither the fee nor the escrow
   release can double-fire.
+- **A no-show forfeits the full deposit outright — no ladder, no fee
+  tiers, no reset window.** `POST /api/dates/:id/no-show`
+  (`src/routes/dates.ts`) lets whichever side showed up report that the
+  other didn't, once the date's scheduled time has passed and it's still
+  sitting in `SCHEDULED` (`canMarkNoShow` in `src/domain/noShow.ts`) — not
+  eligible once it's already `CANCELLED`, `CONFIRMED_ATTENDED`, or already
+  `NO_SHOW`, so a repeat report 409s. `recordNoShow` transitions the date,
+  calls `forfeitClosureDepositForNoShow` (`src/domain/escrow.ts`) to take
+  the no-show user's whole deposit and credit it to the counterparty, and
+  applies `applyNoShowForfeit` (`src/domain/closure.ts`) — a permanent
+  -30 accountability hit, harsher and non-recoverable unlike the
+  cancellation ladder's SUSPENSION penalty, since a no-show is a one-off
+  breach rather than a ladder tier meant to allow redemption.
+
+  This is the fourth path that can resolve a held deposit (alongside an
+  explicit closure filing, silence enforcement, and a success report), so
+  every one of those checks against the same exported
+  `TERMINAL_DEPOSIT_REASONS` (`src/domain/escrow.ts`) before acting —
+  including `findSilenceObligations`, which used to check only for a prior
+  silence forfeit and could otherwise have re-forfeited a deposit a
+  no-show had already claimed, if a later date under the same match later
+  lapsed its own closure SLA.
 
 ## What's intentionally not built yet
 
@@ -153,7 +176,11 @@ Not implemented:
   semantically rich).
 - Real Stripe checkout (mock provider always succeeds).
 - Real eID/liveness verification vendor integration.
-- Auth/sessions — every endpoint trusts the `userId` in the request body.
+- Auth/sessions — every endpoint trusts the `userId` in the request body,
+  which means a no-show report is also unauthenticated: nothing stops the
+  reporter from lying about who showed up. Real dispute resolution (both
+  sides can report, mismatches get flagged for review, etc.) isn't
+  modeled.
 
 ## Project layout
 
@@ -161,7 +188,7 @@ Not implemented:
 prisma/schema.prisma   data model
 prisma/seed.ts          demo seed data
 src/adapters/           external-service interfaces + mocks
-src/domain/             business logic (matching, closure, dates, payments, intent, escrow, silence enforcement, accountability reset)
+src/domain/             business logic (matching, closure, dates, payments, intent, escrow, silence enforcement, accountability reset, no-shows)
 src/routes/             Express route handlers
 src/jobs/scheduler.ts   in-process interval runner for both scheduled sweeps
 scripts/                one-shot entry points for external schedulers (cron, k8s CronJob, ...)

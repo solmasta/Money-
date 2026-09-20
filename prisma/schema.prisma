@@ -106,6 +106,8 @@ model DateProposal {
   cancelledAt DateTime?  // set when marked CANCELLED — anchors the cancellation-ladder rolling window
   createdAt   DateTime   @default(now())
   attendedAt  DateTime?  // set when marked CONFIRMED_ATTENDED — starts the closure SLA clock
+  noShowUserId String?   // set when marked NO_SHOW — the side who didn't show up
+  noShowReportedAt DateTime? // when the counterparty reported it
 
   payment     Payment?
 }

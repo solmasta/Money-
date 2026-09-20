@@ -59,9 +59,13 @@ export function cancellationConsequence(priorCancellationCount: number): Cancell
   return { tier: "SUSPENSION", feeCents: CANCELLATION_FEE_CENTS };
 }
 
-/** No-shows skip the ladder entirely — full escrow forfeiture is handled by
- * the closure/escrow module. This just flags whether the date proposal
- * should transition to NO_SHOW vs CANCELLED. */
+/** Whether a cancellation landed less than 2 hours before the scheduled
+ * time. Not currently wired to a different consequence than an early
+ * cancellation — the cancellation ladder treats every CANCELLED date the
+ * same regardless of timing. An actual no-show (nobody cancelled at all,
+ * and the scheduled time simply passed) is a separate, harsher case with
+ * its own handling in src/domain/noShow.ts — it skips the ladder entirely
+ * in favor of full escrow forfeiture. */
 export function isLateCancellation(scheduledAt: Date, cancelledAt: Date): boolean {
   const hoursBefore = (scheduledAt.getTime() - cancelledAt.getTime()) / (1000 * 60 * 60);
   return hoursBefore < 2;

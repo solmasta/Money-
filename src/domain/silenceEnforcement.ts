@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { CLOSURE_SLA_HOURS, applySilenceForfeit } from "./closure.js";
-import { resolveClosureDeposit } from "./escrow.js";
+import { resolveClosureDeposit, TERMINAL_DEPOSIT_REASONS } from "./escrow.js";
 
 /**
  * The closure SLA clock starts when a date is confirmed attended — that's
@@ -47,17 +47,21 @@ export async function findSilenceObligations(
       [match.userAId, match.userBId],
       [match.userBId, match.userAId],
     ] as const) {
-      const [heldDeposit, filedClosure, alreadyEnforced] = await Promise.all([
+      const [heldDeposit, filedClosure, alreadyResolved] = await Promise.all([
         prisma.escrowLedgerEntry.findFirst({
           where: { userId, matchId, reason: "closure_deposit_held" },
         }),
         prisma.closureEvent.findFirst({ where: { senderId: userId, matchId } }),
+        // Checks every terminal reason, not just "closure_forfeit" from a
+        // prior sweep — a deposit already forfeited via a no-show on an
+        // earlier date in this same match must not be forfeited again once
+        // a later date's closure SLA lapses.
         prisma.escrowLedgerEntry.findFirst({
-          where: { userId, matchId, reason: "closure_forfeit" },
+          where: { userId, matchId, reason: { in: TERMINAL_DEPOSIT_REASONS } },
         }),
       ]);
 
-      if (heldDeposit && !filedClosure && !alreadyEnforced) {
+      if (heldDeposit && !filedClosure && !alreadyResolved) {
         obligations.push({ matchId, userId, counterpartyId });
       }
     }
