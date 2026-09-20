@@ -45,6 +45,7 @@ npm test
 | Voice interview → structured profile | `src/adapters/mock.ts` (`MockProfileExtractor`), `POST /api/users/:id/interview` |
 | Agent-to-agent negotiation, "one match, not a feed" | `src/domain/matching.ts` (`findBestMatch`, dealbreaker veto, cosine similarity), `POST /api/matches/find/:userId` |
 | **Closure Guarantee** (the differentiator) | `src/domain/closure.ts` — reason taxonomy, SLA, escrow resolution, accountability score; `POST /api/matches/:id/closure` |
+| Silence enforcement (scheduled) | `src/domain/silenceEnforcement.ts`, `src/jobs/scheduler.ts`, `scripts/enforce-silence-sweep.ts` |
 | Escrow deposit / commitment device | `src/domain/escrow.ts`, `EscrowLedgerEntry` model |
 | Pay-per-date, success fee, unit economics | `src/domain/payments.ts`, `POST /api/dates/:id/attend`, `POST /api/matches/:id/report-success` |
 | Cancellation ladder (free → fee → suspension) | `src/domain/dates.ts`, `POST /api/dates/:id/cancel` |
@@ -77,11 +78,31 @@ npm test
 - **The Closure Guarantee is enforced, not just documented**: there is no
   API path that ends a match without a valid taxonomy reason —
   `fileClosure` throws on a missing or invalid reason, and the route layer
-  validates the reason before ever touching the database. Silence is
-  handled by `POST /api/matches/:id/enforce-silence`, intended to be called
-  by a scheduled job once `isWithinClosureSla` reports a match's SLA has
-  expired with no `ClosureEvent` on file — it forfeits the silent party's
-  escrow deposit to the counterparty and dents their accountability score.
+  validates the reason before ever touching the database.
+- **Silence is enforced automatically, on a schedule.** The closure SLA
+  clock (`CLOSURE_SLA_HOURS` in `src/domain/closure.ts`) starts once a date
+  is marked attended (`DateProposal.attendedAt`). `findSilenceObligations`
+  in `src/domain/silenceEnforcement.ts` finds every (match, user) pair past
+  that SLA with an outstanding escrow deposit and no `ClosureEvent` filed;
+  `runEnforceSilenceSweep` forfeits each one's deposit to the counterparty,
+  dents their accountability score, and closes the match. It's idempotent,
+  so running it repeatedly or concurrently never double-penalizes anyone.
+  Two ways to run it, and you only need one:
+  - **In-process interval** (default): `src/jobs/scheduler.ts` runs the
+    sweep every `ENFORCE_SILENCE_INTERVAL_MINUTES` minutes (default 15,
+    runs once immediately on startup too). Fine for a single server
+    instance or local dev — no extra infra needed.
+  - **External scheduler**: `npm run job:enforce-silence`
+    (`scripts/enforce-silence-sweep.ts`) runs one sweep and exits. Point a
+    cron job / Kubernetes CronJob / scheduled function at this instead if
+    you're running multiple API instances, and set
+    `ENFORCE_SILENCE_DISABLED=true` so they don't also run the in-process
+    interval redundantly.
+
+  `POST /api/matches/:id/enforce-silence` still exists as a manual/admin
+  trigger for the same consequence — both paths call the same
+  `enforceSilenceForUser` function, so there's exactly one code path for
+  "what happens when someone goes silent."
 
 ## What's intentionally not built yet
 
@@ -95,8 +116,6 @@ Not implemented:
   semantically rich).
 - Real Stripe checkout (mock provider always succeeds).
 - Real eID/liveness verification vendor integration.
-- A scheduled job to call `enforce-silence` automatically once the closure
-  SLA lapses (the endpoint exists; nothing calls it on a timer yet).
 - Auth/sessions — every endpoint trusts the `userId` in the request body.
 
 ## Project layout
@@ -105,9 +124,11 @@ Not implemented:
 prisma/schema.prisma   data model
 prisma/seed.ts          demo seed data
 src/adapters/           external-service interfaces + mocks
-src/domain/             pure business logic (matching, closure, dates, payments, intent, escrow)
+src/domain/             business logic (matching, closure, dates, payments, intent, escrow, silence enforcement)
 src/routes/             Express route handlers
+src/jobs/scheduler.ts   in-process interval runner for the silence-enforcement sweep
+scripts/                one-shot entry points for external schedulers (cron, k8s CronJob, ...)
 src/server.ts           app entrypoint
 public/index.html       demo UI
-test/                   Vitest unit tests for src/domain
+test/                   Vitest tests (pure unit tests + a temp-SQLite integration test for the sweep)
 ```

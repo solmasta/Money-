@@ -4,7 +4,7 @@ import { prisma } from "../db.js";
 import { findBestMatch, type CandidateProfile } from "../domain/matching.js";
 import { holdClosureDeposit, resolveClosureDeposit } from "../domain/escrow.js";
 import { fileClosure, isValidClosureReason } from "../domain/closure.js";
-import { applySilenceForfeit } from "../domain/closure.js";
+import { enforceSilenceForUser } from "../domain/silenceEnforcement.js";
 
 export const matchesRouter = Router();
 
@@ -165,10 +165,14 @@ matchesRouter.post("/:id/closure", async (req, res) => {
 });
 
 /**
- * Enforcement path for the "silence is not an option" promise: called by a
- * scheduled job (not modeled here) when a match's closure SLA has expired
- * with no ClosureEvent filed by one side. Forfeits their escrow deposit to
- * the counterparty and dings accountability score.
+ * Manual/admin override for the "silence is not an option" promise:
+ * forfeits the named user's escrow deposit to the counterparty, dings
+ * their accountability score, and closes the match. The scheduled sweep
+ * (src/domain/silenceEnforcement.ts, wired up in src/jobs/scheduler.ts)
+ * calls the same underlying function automatically once a match's closure
+ * SLA has expired with no ClosureEvent filed by one side — this endpoint
+ * exists to trigger that same consequence on demand (e.g. from an admin
+ * tool) rather than waiting for the next sweep.
  */
 matchesRouter.post("/:id/enforce-silence", async (req, res) => {
   const parsed = approveSchema.safeParse(req.body); // { userId } = the silent party
@@ -177,16 +181,12 @@ matchesRouter.post("/:id/enforce-silence", async (req, res) => {
   const match = await prisma.match.findUnique({ where: { id: req.params.id } });
   if (!match) return res.status(404).json({ error: "not found" });
   const { userAId, userBId } = match;
+  if (![userAId, userBId].includes(parsed.data.userId)) {
+    return res.status(403).json({ error: "user is not part of this match" });
+  }
   const counterpartyId = parsed.data.userId === userAId ? userBId : userAId;
 
-  await resolveClosureDeposit(prisma, parsed.data.userId, counterpartyId, match.id, false);
+  const result = await enforceSilenceForUser(prisma, match.id, parsed.data.userId, counterpartyId);
 
-  const user = await prisma.user.findUniqueOrThrow({ where: { id: parsed.data.userId } });
-  const adjustment = applySilenceForfeit(user.accountabilityScore);
-  const updatedUser = await prisma.user.update({
-    where: { id: user.id },
-    data: { accountabilityScore: adjustment.newScore },
-  });
-
-  res.json({ user: updatedUser, adjustment });
+  res.json(result);
 });

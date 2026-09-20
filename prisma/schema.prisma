@@ -103,6 +103,7 @@ model DateProposal {
   status      String     @default("SCHEDULED")
   cancelledByUserId String?
   createdAt   DateTime   @default(now())
+  attendedAt  DateTime?  // set when marked CONFIRMED_ATTENDED — starts the closure SLA clock
 
   payment     Payment?
 }

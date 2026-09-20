@@ -55,7 +55,7 @@ datesRouter.post("/dates/:id/attend", async (req, res) => {
 
   const updated = await prisma.dateProposal.update({
     where: { id: dateProposal.id },
-    data: { status: "CONFIRMED_ATTENDED" },
+    data: { status: "CONFIRMED_ATTENDED", attendedAt: new Date() },
   });
   await prisma.match.update({ where: { id: dateProposal.matchId }, data: { status: "DATE_COMPLETED" } });
 
