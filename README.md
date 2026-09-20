@@ -79,7 +79,16 @@ npm test
 - **The Closure Guarantee is enforced, not just documented**: there is no
   API path that ends a match without a valid taxonomy reason —
   `fileClosure` throws on a missing or invalid reason, and the route layer
-  validates the reason before ever touching the database.
+  validates the reason before ever touching the database. Filing itself is
+  always accepted (a late explanation beats none), but the consequence
+  depends on whether it actually beat the SLA:
+  `isMatchOverdueForClosure` (`src/domain/silenceEnforcement.ts`) checks
+  the same cutoff the automatic sweep uses, so a manual filing and the
+  sweep never disagree about what counts as late. Filing on time releases
+  the deposit as normal; filing after an attended date's 48-hour window
+  has lapsed routes through `enforceSilenceForUser` — the exact
+  consequence the automatic sweep would have applied, safely idempotent
+  against a sweep that already got there first.
 - **Silence is enforced automatically, on a schedule.** The closure SLA
   clock (`CLOSURE_SLA_HOURS` in `src/domain/closure.ts`) starts once a date
   is marked attended (`DateProposal.attendedAt`). `findSilenceObligations`
@@ -180,7 +189,23 @@ Not implemented:
   which means a no-show report is also unauthenticated: nothing stops the
   reporter from lying about who showed up. Real dispute resolution (both
   sides can report, mismatches get flagged for review, etc.) isn't
-  modeled.
+  modeled. `PaymentProvider.refund` (`src/adapters/types.ts`) is
+  implemented in the mock but has no caller — nothing currently reverses a
+  charge (e.g. a disputed cancellation fee), which is the same gap.
+- A `DECLINED` `Match` status is documented in the schema comment but
+  nothing ever sets it — there's no "decline this match outright, before
+  any date" endpoint, only `/approve`. Declining today means either never
+  approving (the match just sits at `PROPOSED`/`PENDING_APPROVAL`
+  indefinitely) or, once a date's been scheduled, cancelling or filing
+  closure instead.
+- Cancelling a date or recording a no-show doesn't update `Match.status`
+  (it stays at whatever it was, e.g. `DATE_SCHEDULED`) — a new date can
+  still be proposed on that match regardless, so nothing is functionally
+  blocked, but the status field can read as stale until the match reaches
+  an explicit terminal action (closure, success, or silence enforcement).
+  Whether a no-show or cancellation should end the match automatically or
+  leave it open for a reschedule is a product decision, not just a wiring
+  gap, so it's left as-is rather than guessed at.
 
 ## Project layout
 

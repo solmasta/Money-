@@ -55,6 +55,58 @@ async function makeMatch() {
   return { userA, userB, match };
 }
 
+describe("resolveClosureDeposit", () => {
+  it("is a no-op for a user who never had a deposit held", async () => {
+    const { userA, userB, match } = await makeMatch();
+    const result = await resolveClosureDeposit(prisma, userA.id, userB.id, match.id, true);
+    expect(result).toBeNull();
+
+    const entries = await prisma.escrowLedgerEntry.findMany({ where: { userId: userA.id, matchId: match.id } });
+    expect(entries).toHaveLength(0);
+  });
+
+  it("does not re-resolve a deposit already released on time when called again", async () => {
+    const { userA, userB, match } = await makeMatch();
+    await holdClosureDeposit(prisma, userA.id, match.id);
+
+    const first = await resolveClosureDeposit(prisma, userA.id, userB.id, match.id, true);
+    const second = await resolveClosureDeposit(prisma, userA.id, userB.id, match.id, true);
+
+    expect(first).not.toBeNull();
+    expect(second).toBeNull();
+
+    const releases = await prisma.escrowLedgerEntry.findMany({
+      where: { userId: userA.id, matchId: match.id, reason: "closure_deposit_released" },
+    });
+    expect(releases).toHaveLength(1);
+  });
+
+  it("does not forfeit a deposit that was already released on time (a late call losing a race)", async () => {
+    const { userA, userB, match } = await makeMatch();
+    await holdClosureDeposit(prisma, userA.id, match.id);
+    await resolveClosureDeposit(prisma, userA.id, userB.id, match.id, true); // filed on time first
+
+    const result = await resolveClosureDeposit(prisma, userA.id, userB.id, match.id, false); // a stale "late" resolution arrives after
+    expect(result).toBeNull();
+
+    const reasons = (
+      await prisma.escrowLedgerEntry.findMany({ where: { userId: userA.id, matchId: match.id } })
+    ).map((e) => e.reason);
+    expect(reasons).not.toContain("closure_forfeit");
+  });
+
+  it("does not release a deposit already forfeited via a no-show", async () => {
+    const { userA, userB, match } = await makeMatch();
+    await holdClosureDeposit(prisma, userA.id, match.id);
+    await prisma.escrowLedgerEntry.create({
+      data: { userId: userA.id, matchId: match.id, amountCents: -CLOSURE_DEPOSIT_CENTS, reason: "no_show_forfeit" },
+    });
+
+    const result = await resolveClosureDeposit(prisma, userA.id, userB.id, match.id, true);
+    expect(result).toBeNull();
+  });
+});
+
 describe("releaseClosureDepositOnSuccess", () => {
   it("releases a held deposit back to the user", async () => {
     const { userA, match } = await makeMatch();

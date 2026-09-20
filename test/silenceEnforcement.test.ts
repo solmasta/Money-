@@ -4,7 +4,13 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { PrismaClient } from "@prisma/client";
-import { runEnforceSilenceSweep, findSilenceObligations } from "../src/domain/silenceEnforcement.js";
+import {
+  runEnforceSilenceSweep,
+  findSilenceObligations,
+  isMatchOverdueForClosure,
+  enforceSilenceForUser,
+} from "../src/domain/silenceEnforcement.js";
+import { holdClosureDeposit, releaseClosureDepositOnSuccess } from "../src/domain/escrow.js";
 import { CLOSURE_SLA_HOURS, CLOSURE_DEPOSIT_CENTS } from "../src/domain/closure.js";
 
 // Exercises the sweep against a real (temporary) SQLite database, since its
@@ -154,5 +160,56 @@ describe("runEnforceSilenceSweep", () => {
 
     const updatedA = await prisma.user.findUniqueOrThrow({ where: { id: userA.id } });
     expect(updatedA.accountabilityScore).toBe(100); // untouched — they filed on time
+  });
+});
+
+describe("isMatchOverdueForClosure", () => {
+  it("is false before any attended date's SLA has elapsed", async () => {
+    const { match } = await makeMatchWithAttendedDate(hoursAgo(CLOSURE_SLA_HOURS - 1));
+    expect(await isMatchOverdueForClosure(prisma, match.id)).toBe(false);
+  });
+
+  it("is true once an attended date's SLA has elapsed", async () => {
+    const { match } = await makeMatchWithAttendedDate(hoursAgo(CLOSURE_SLA_HOURS + 1));
+    expect(await isMatchOverdueForClosure(prisma, match.id)).toBe(true);
+  });
+
+  it("is false for a match with no attended date at all", async () => {
+    const userA = await prisma.user.create({ data: { email: `x-${Date.now()}@t.com`, displayName: "X" } });
+    const userB = await prisma.user.create({ data: { email: `y-${Date.now()}@t.com`, displayName: "Y" } });
+    const match = await prisma.match.create({
+      data: { userAId: userA.id, userBId: userB.id, compatibilityScore: 0.9, scoreBreakdown: "{}", status: "PROPOSED" },
+    });
+    expect(await isMatchOverdueForClosure(prisma, match.id)).toBe(false);
+  });
+});
+
+describe("enforceSilenceForUser idempotency (hardened against a second, non-pre-filtered caller)", () => {
+  it("is a full no-op — no double score hit — if the deposit was already resolved another way", async () => {
+    const { userA, userB, match } = await makeMatchWithAttendedDate(hoursAgo(CLOSURE_SLA_HOURS + 1));
+    // Simulate the deposit already having been resolved another way (here,
+    // a success report racing with this call — the exact reason doesn't
+    // matter, only that TERMINAL_DEPOSIT_REASONS already covers it).
+    await releaseClosureDepositOnSuccess(prisma, userA.id, match.id);
+    const before = await prisma.user.findUniqueOrThrow({ where: { id: userA.id } });
+
+    const result = await enforceSilenceForUser(prisma, match.id, userA.id, userB.id);
+
+    expect(result.newAccountabilityScore).toBe(before.accountabilityScore);
+  });
+
+  it("still enforces normally when nothing has resolved the deposit yet", async () => {
+    const userA = await prisma.user.create({ data: { email: `p-${Date.now()}@t.com`, displayName: "P" } });
+    const userB = await prisma.user.create({ data: { email: `q-${Date.now()}@t.com`, displayName: "Q" } });
+    const match = await prisma.match.create({
+      data: { userAId: userA.id, userBId: userB.id, compatibilityScore: 0.9, scoreBreakdown: "{}", status: "DATE_COMPLETED" },
+    });
+    await holdClosureDeposit(prisma, userA.id, match.id);
+
+    const result = await enforceSilenceForUser(prisma, match.id, userA.id, userB.id);
+
+    expect(result.newAccountabilityScore).toBe(85); // 100 - 15
+    const updatedMatch = await prisma.match.findUniqueOrThrow({ where: { id: match.id } });
+    expect(updatedMatch.status).toBe("CLOSED");
   });
 });

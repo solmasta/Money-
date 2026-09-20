@@ -4,7 +4,7 @@ import { prisma } from "../db.js";
 import { findBestMatch, type CandidateProfile } from "../domain/matching.js";
 import { holdClosureDeposit, resolveClosureDeposit } from "../domain/escrow.js";
 import { fileClosure, isValidClosureReason } from "../domain/closure.js";
-import { enforceSilenceForUser } from "../domain/silenceEnforcement.js";
+import { enforceSilenceForUser, isMatchOverdueForClosure } from "../domain/silenceEnforcement.js";
 
 export const matchesRouter = Router();
 
@@ -118,8 +118,13 @@ const closureSchema = z.object({
 /**
  * The Closure Guarantee, wired to the API: ends this match on the filer's
  * side. Requires a valid taxonomy reason — there is no "just decline"
- * endpoint that skips this. Resolves escrow immediately since the filing
- * itself proves it was on time.
+ * endpoint that skips this. Filing a reason is always accepted (a late
+ * explanation beats none), but the escrow/score consequence depends on
+ * whether it actually beat the SLA: filing while no attended date's
+ * 48-hour window has lapsed releases the deposit as normal; filing after
+ * one has lapsed gets exactly the consequence the automatic silence sweep
+ * would have applied (enforceSilenceForUser is idempotent against a sweep
+ * that already got there first).
  */
 matchesRouter.post("/:id/closure", async (req, res) => {
   const parsed = closureSchema.safeParse(req.body);
@@ -154,14 +159,19 @@ matchesRouter.post("/:id/closure", async (req, res) => {
     },
   });
 
-  await resolveClosureDeposit(prisma, parsed.data.userId, counterpartyId, match.id, true);
+  const now = new Date();
+  const filedOnTime = !(await isMatchOverdueForClosure(prisma, match.id, now));
 
-  const updated = await prisma.match.update({
-    where: { id: match.id },
-    data: { status: "CLOSED" },
-  });
+  if (filedOnTime) {
+    await resolveClosureDeposit(prisma, parsed.data.userId, counterpartyId, match.id, true);
+    await prisma.match.update({ where: { id: match.id }, data: { status: "CLOSED" } });
+  } else {
+    await enforceSilenceForUser(prisma, match.id, parsed.data.userId, counterpartyId);
+  }
 
-  res.status(201).json({ closureEvent, match: updated });
+  const updated = await prisma.match.findUniqueOrThrow({ where: { id: match.id } });
+
+  res.status(201).json({ closureEvent, match: updated, filedOnTime });
 });
 
 /**

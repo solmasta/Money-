@@ -17,7 +17,12 @@ export async function holdClosureDeposit(prisma: PrismaClient, userId: string, m
  * Resolves the deposit once we know whether the user filed their closure
  * reason on time. On time: the deposit is released back to them (a
  * zero-sum ledger no-op recorded for audit). Late/never: it's forfeited and
- * credited to the counterparty.
+ * credited to the counterparty. A no-op — not an error — for a user who
+ * never had a deposit held, or whose deposit was already resolved some
+ * other way (this function has two callers now: the automatic silence
+ * sweep, and a manual closure filing that turns out to be late — either
+ * one could win a race against the other, or against a no-show that
+ * already claimed the same deposit).
  */
 export async function resolveClosureDeposit(
   prisma: PrismaClient,
@@ -26,6 +31,16 @@ export async function resolveClosureDeposit(
   matchId: string,
   filedOnTime: boolean,
 ) {
+  const held = await prisma.escrowLedgerEntry.findFirst({
+    where: { userId, matchId, reason: "closure_deposit_held" },
+  });
+  if (!held) return null;
+
+  const alreadyResolved = await prisma.escrowLedgerEntry.findFirst({
+    where: { userId, matchId, reason: { in: TERMINAL_DEPOSIT_REASONS } },
+  });
+  if (alreadyResolved) return null;
+
   const outcome = resolveEscrow(filedOnTime);
   if (filedOnTime) {
     return prisma.escrowLedgerEntry.create({

@@ -70,6 +70,26 @@ export async function findSilenceObligations(
   return obligations;
 }
 
+/**
+ * Whether at least one of this match's attended dates has an expired
+ * closure SLA — the same cutoff `findSilenceObligations` uses to decide
+ * who's obligated, extracted so a second caller (a manual closure filing
+ * that turns out to be late — src/routes/matches.ts) can ask "is this
+ * late?" for one match without duplicating the query, and so the two
+ * never drift into disagreeing about what counts as overdue.
+ */
+export async function isMatchOverdueForClosure(
+  prisma: PrismaClient,
+  matchId: string,
+  now: Date = new Date(),
+): Promise<boolean> {
+  const cutoff = new Date(now.getTime() - CLOSURE_SLA_HOURS * 60 * 60 * 1000);
+  const overdueAttendedDate = await prisma.dateProposal.findFirst({
+    where: { matchId, status: "CONFIRMED_ATTENDED", attendedAt: { lte: cutoff } },
+  });
+  return !!overdueAttendedDate;
+}
+
 export interface SilenceEnforcementResult {
   matchId: string;
   userId: string;
@@ -80,9 +100,13 @@ export interface SilenceEnforcementResult {
  * Applies the consequence for one silent party: forfeits their escrow
  * deposit to the counterparty, dents their accountability score, and closes
  * the match (mirroring the manual closure route — one side's closure,
- * filed or enforced, ends the match). Shared by the manual
- * `/enforce-silence` endpoint and the scheduled sweep so both paths apply
- * the exact same consequence.
+ * filed or enforced, ends the match). Shared by three callers now: the
+ * manual `/enforce-silence` endpoint, the scheduled sweep, and a manual
+ * closure filing that turns out to be late (src/routes/matches.ts) — so
+ * this checks for a prior resolution itself rather than trusting every
+ * caller to have pre-filtered, and is a full no-op (no double score hit,
+ * no redundant match update) if another path already handled this
+ * (match, user) pair.
  */
 export async function enforceSilenceForUser(
   prisma: PrismaClient,
@@ -90,9 +114,17 @@ export async function enforceSilenceForUser(
   userId: string,
   counterpartyId: string,
 ): Promise<SilenceEnforcementResult> {
+  const user = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
+
+  const alreadyResolved = await prisma.escrowLedgerEntry.findFirst({
+    where: { userId, matchId, reason: { in: TERMINAL_DEPOSIT_REASONS } },
+  });
+  if (alreadyResolved) {
+    return { matchId, userId, newAccountabilityScore: user.accountabilityScore };
+  }
+
   await resolveClosureDeposit(prisma, userId, counterpartyId, matchId, false);
 
-  const user = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
   const adjustment = applySilenceForfeit(user.accountabilityScore);
   await prisma.user.update({ where: { id: user.id }, data: { accountabilityScore: adjustment.newScore } });
 
