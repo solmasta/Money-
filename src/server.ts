@@ -1,6 +1,5 @@
 import express from "express";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { usersRouter } from "./routes/users.js";
 import { matchesRouter } from "./routes/matches.js";
 import { datesRouter } from "./routes/dates.js";
@@ -9,12 +8,15 @@ import { vouchesRouter } from "./routes/vouches.js";
 import { prisma } from "./db.js";
 import { startEnforceSilenceScheduler, startAccountabilityResetScheduler } from "./jobs/scheduler.js";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
 const app = express();
 app.use(express.json());
 
-app.use(express.static(path.join(__dirname, "..", "public")));
+// Resolved from the working directory (always the repo root — how `npm run
+// dev`/`npm start` both invoke this) rather than __dirname, since tsc's
+// output layout (dist/src/server.js, because tsconfig's rootDir has to
+// cover src/, prisma/, and scripts/ as siblings) puts this file at a
+// different depth than the uncompiled src/server.ts tsx runs directly.
+app.use(express.static(path.join(process.cwd(), "public")));
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
