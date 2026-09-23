@@ -4,114 +4,379 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>CLOSURE — the dating app designed to be deleted</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 <style>
   :root {
     color-scheme: dark;
-    --bg: #0b0b0c;
-    --panel: #151517;
-    --border: #2a2a2e;
-    --text: #e8e8ea;
-    --muted: #8a8a90;
-    --accent: #ff5c5c;
-    --ok: #5cff9d;
+    --bg: #0a0a10;
+    --panel: #14141e;
+    --panel-2: #1a1a27;
+    --border: #2b2b3d;
+    --border-lit: #3d3d57;
+    --text: #eceaf5;
+    --muted: #8b889d;
+    --accent: #ff4d63;      /* closure red — CTAs, danger, the guarantee */
+    --accent-ink: #1a0508;
+    --xp: #f5b942;          /* gold — level, xp */
+    --xp-bg: #3a2c10;
+    --trust: #43e097;       /* green — bond / trust */
+    --trust-bg: #0f2e22;
+    --guarded: #a78bfa;     /* violet — the "guarded" path */
   }
   * { box-sizing: border-box; }
+  html, body { height: 100%; }
   body {
     margin: 0;
-    background: var(--bg);
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(255,77,99,0.08), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, rgba(245,185,66,0.06), transparent 55%),
+      var(--bg);
     color: var(--text);
-    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-    line-height: 1.5;
+    font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    line-height: 1.55;
   }
-  header {
-    padding: 2rem 1.5rem 1rem;
+  h1, h2, .display {
+    font-family: "Rajdhani", "JetBrains Mono", sans-serif;
+    letter-spacing: 0.02em;
+  }
+
+  /* ---------- Title banner ---------- */
+  header.banner {
+    padding: 2.25rem 1.5rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    text-align: center;
+  }
+  header.banner .crest {
+    display: inline-block;
+    font-size: 0.68rem;
+    letter-spacing: 0.3em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+  }
+  header.banner h1 {
+    margin: 0;
+    font-size: clamp(2.2rem, 6vw, 3.2rem);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    background: linear-gradient(180deg, #ffffff 0%, #c9c6dd 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 0 40px rgba(255,77,99,0.25);
+  }
+  header.banner p.tag {
+    margin: 0.5rem 0 0;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  header.banner p.tag strong { color: var(--accent); font-weight: 600; }
+
+  /* ---------- HUD ---------- */
+  .hud {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 0.75rem;
+    align-items: center;
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 0.75rem 1rem;
+    background: rgba(10,10,16,0.92);
+    backdrop-filter: blur(6px);
     border-bottom: 1px solid var(--border);
   }
-  header h1 { margin: 0; font-size: 1.4rem; letter-spacing: 0.08em; }
-  header p { margin: 0.4rem 0 0; color: var(--muted); }
+  .hud-char {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-width: 0;
+  }
+  .hud-char.right { flex-direction: row-reverse; text-align: right; }
+  .levelchip {
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    background: var(--xp-bg);
+    border: 2px solid var(--xp);
+    color: var(--xp);
+    font-family: "Rajdhani", sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .hud-meta { min-width: 0; }
+  .hud-name {
+    font-family: "Rajdhani", sans-serif;
+    font-weight: 600;
+    font-size: 0.92rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .hud-xp-track {
+    height: 5px;
+    width: 100%;
+    min-width: 70px;
+    max-width: 140px;
+    background: var(--panel-2);
+    border-radius: 999px;
+    overflow: hidden;
+    margin-top: 3px;
+  }
+  .hud-xp-fill { height: 100%; background: var(--xp); width: 0%; transition: width 0.4s ease; }
+  .hud-bond { text-align: center; width: 200px; justify-self: center; }
+  .hud-bond-label {
+    font-size: 0.62rem;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .hud-bond-track {
+    height: 8px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+    margin: 3px 0;
+  }
+  .hud-bond-fill { height: 100%; background: var(--trust); width: 0%; transition: width 0.4s ease; }
+  .hud-bond-fill.guaranteed { background: linear-gradient(90deg, var(--trust), var(--xp)); }
+  .hud-bond-value { font-size: 0.68rem; color: var(--muted); }
+  .hud-bond-value.guaranteed { color: var(--xp); font-weight: 600; }
+
+  /* ---------- Layout ---------- */
   main {
-    max-width: 900px;
+    max-width: 980px;
     margin: 0 auto;
     padding: 1.5rem;
     display: grid;
-    gap: 1.25rem;
+    gap: 1.1rem;
   }
   section.step {
+    position: relative;
     background: var(--panel);
     border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.1rem 1.3rem 1.3rem 3.6rem;
+  }
+  section.step .chapter-mark {
+    position: absolute;
+    left: 1.1rem;
+    top: 1.15rem;
+    font-family: "Rajdhani", sans-serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--xp);
+    border: 1px solid var(--xp);
     border-radius: 8px;
-    padding: 1rem 1.25rem;
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   section.step h2 {
-    margin: 0 0 0.75rem;
-    font-size: 0.95rem;
-    color: var(--muted);
+    margin: 0 0 0.2rem;
+    font-size: 1.05rem;
+    color: var(--text);
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
   }
-  label { display: block; font-size: 0.8rem; color: var(--muted); margin-top: 0.6rem; }
+  section.step p.flavor {
+    margin: 0 0 0.85rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+    max-width: 62ch;
+  }
+  section.step p.flavor em { color: var(--trust); font-style: normal; }
+  section.step p.flavor strong { color: var(--xp); }
+
+  label { display: block; font-size: 0.78rem; color: var(--muted); margin-top: 0.6rem; }
   input, textarea, select {
     width: 100%;
-    background: #0e0e10;
+    background: #0e0e14;
     border: 1px solid var(--border);
     color: var(--text);
     padding: 0.5rem;
     border-radius: 6px;
     font-family: inherit;
     font-size: 0.85rem;
-    margin-top: 0.2rem;
+    margin-top: 0.25rem;
   }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: var(--border-lit); }
   textarea { min-height: 4.5rem; resize: vertical; }
+
   button {
     margin-top: 0.75rem;
+    margin-right: 0.4rem;
     background: var(--accent);
-    color: #1a0a0a;
+    color: var(--accent-ink);
     border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
+    padding: 0.55rem 1.1rem;
+    border-radius: 7px;
     font-weight: 700;
+    font-family: "Rajdhani", sans-serif;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    font-size: 0.85rem;
     cursor: pointer;
-    font-family: inherit;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.35);
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
   }
+  button:hover { transform: translateY(-1px); box-shadow: 0 3px 0 rgba(0,0,0,0.35); }
+  button:active { transform: translateY(1px); box-shadow: 0 1px 0 rgba(0,0,0,0.35); }
   button.secondary {
     background: transparent;
     color: var(--text);
-    border: 1px solid var(--border);
-    font-weight: 400;
+    border: 1px solid var(--border-lit);
+    box-shadow: none;
   }
+  button.choice {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    text-transform: none;
+    font-family: "JetBrains Mono", monospace;
+    font-weight: 500;
+    font-size: 0.82rem;
+    padding: 0.55rem 0.7rem;
+  }
+  button.choice:hover { border-color: var(--border-lit); transform: none; box-shadow: none; }
+  button.choice .style-tag {
+    display: inline-block;
+    font-family: "Rajdhani", sans-serif;
+    font-weight: 700;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    margin-right: 0.5rem;
+  }
+  button.choice[data-style="DIRECT"] .style-tag { background: var(--trust-bg); color: var(--trust); }
+  button.choice[data-style="GUARDED"] .style-tag { background: rgba(167,139,250,0.12); color: var(--guarded); }
+  button.choice[data-style="DEFLECT"] .style-tag { background: rgba(255,77,99,0.1); color: var(--accent); }
   button:disabled { opacity: 0.4; cursor: not-allowed; }
-  pre.out {
-    background: #0e0e10;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 0.6rem;
-    font-size: 0.75rem;
-    overflow-x: auto;
-    white-space: pre-wrap;
-    word-break: break-word;
-    margin-top: 0.6rem;
-    color: var(--ok);
-  }
+
   .row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 640px) { .row { grid-template-columns: 1fr; } .hud { grid-template-columns: 1fr; text-align: center; } .hud-char.right { flex-direction: row; text-align: left; } }
+
   .badge {
     display: inline-block;
-    font-size: 0.7rem;
-    padding: 0.1rem 0.5rem;
+    font-size: 0.62rem;
+    font-family: "JetBrains Mono", monospace;
+    padding: 0.15rem 0.5rem;
     border-radius: 999px;
     border: 1px solid var(--border);
     color: var(--muted);
-    margin-left: 0.4rem;
+    margin-left: 0.5rem;
+    vertical-align: middle;
+    text-transform: none;
+  }
+
+  .log-label {
+    margin-top: 0.9rem;
+    font-size: 0.62rem;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  pre.out {
+    background: #0a0a10;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.6rem 0.7rem;
+    font-size: 0.72rem;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin: 0.3rem 0 0;
+    color: var(--trust);
+    min-height: 1.6rem;
+  }
+
+  /* ---------- Trust Quest specific ---------- */
+  .quest-card {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.8rem 0.9rem;
+  }
+  .quest-question { color: var(--text); font-size: 0.92rem; font-weight: 600; margin-bottom: 0.5rem; }
+  .quest-hint { color: var(--xp); font-size: 0.78rem; margin: -0.15rem 0 0.6rem; }
+  .quest-empty { color: var(--muted); font-size: 0.82rem; font-style: normal; }
+
+  .guarantee-banner {
+    display: none;
+    margin-top: 0.75rem;
+    padding: 0.7rem 0.9rem;
+    border-radius: 8px;
+    background: linear-gradient(90deg, rgba(67,224,151,0.14), rgba(245,185,66,0.14));
+    border: 1px solid var(--trust);
+    color: var(--trust);
+    font-family: "Rajdhani", sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    text-align: center;
+  }
+  .guarantee-banner.show { display: block; }
+
+  footer.note {
+    max-width: 980px;
+    margin: 0.5rem auto 3rem;
+    padding: 0 1.5rem;
+    color: var(--muted);
+    font-size: 0.78rem;
+    line-height: 1.6;
   }
 </style>
 </head>
 <body>
-<header>
+<header class="banner">
+  <span class="crest">◆ a dating app designed to be deleted ◆</span>
   <h1>CLOSURE</h1>
-  <p>the dating app designed to be deleted. — "we win when you leave."</p>
+  <p class="tag">"We win when you leave." — level up on <strong>proven honesty</strong>, not time spent.</p>
 </header>
+
+<div class="hud" id="hud">
+  <div class="hud-char" id="hud-a">
+    <div class="levelchip" id="hud-a-level">—</div>
+    <div class="hud-meta">
+      <div class="hud-name" id="hud-a-name">Character A — not created</div>
+      <div class="hud-xp-track"><div class="hud-xp-fill" id="hud-a-xp"></div></div>
+    </div>
+  </div>
+  <div class="hud-bond">
+    <div class="hud-bond-label">Bond</div>
+    <div class="hud-bond-track"><div class="hud-bond-fill" id="hud-bond-fill"></div></div>
+    <div class="hud-bond-value" id="hud-bond-value">no match yet</div>
+  </div>
+  <div class="hud-char right" id="hud-b">
+    <div class="levelchip" id="hud-b-level">—</div>
+    <div class="hud-meta">
+      <div class="hud-name" id="hud-b-name">Character B — not created</div>
+      <div class="hud-xp-track"><div class="hud-xp-fill" id="hud-b-xp"></div></div>
+    </div>
+  </div>
+</div>
+
 <main>
   <section class="step">
-    <h2>1. Create two users <span class="badge">POST /api/users</span></h2>
+    <span class="chapter-mark">I</span>
+    <h2>Create your characters <span class="badge">POST /api/users</span></h2>
+    <p class="flavor">Every run starts with two real accounts. No premade heroes — you roll these yourself.</p>
     <div class="row">
       <div>
         <label>User A email <input id="aEmail" value="alice@example.com" /></label>
@@ -124,11 +389,14 @@
         <button onclick="createUser('b')">Create User B</button>
       </div>
     </div>
+    <div class="log-label">System Log</div>
     <pre class="out" id="out-users"></pre>
   </section>
 
   <section class="step">
-    <h2>2. Voice interview (stand-in transcript) <span class="badge">POST /api/users/:id/interview</span></h2>
+    <span class="chapter-mark">II</span>
+    <h2>The interview <span class="badge">POST /api/users/:id/interview</span></h2>
+    <p class="flavor">Stand-in for the real voice interview. What you say here becomes your agent's read on you — <em>dealbreakers, values, intent</em> — for the rest of the run.</p>
     <div class="row">
       <div>
         <label>User A says <textarea id="aTranscript">I value honesty and family above all. I am looking for a long-term relationship, something serious. I am pretty secure and independent. Smoking is a dealbreaker for me.</textarea></label>
@@ -139,60 +407,78 @@
         <button onclick="interview('b')">Run interview B</button>
       </div>
     </div>
+    <div class="log-label">System Log</div>
     <pre class="out" id="out-interview"></pre>
   </section>
 
   <section class="step">
-    <h2>3. Verification <span class="badge">POST /api/users/:id/verify</span></h2>
+    <span class="chapter-mark">III</span>
+    <h2>Prove you're real <span class="badge">POST /api/users/:id/verify</span></h2>
+    <p class="flavor">Mandatory ID + liveness check. "Verified Human" is the default state here, not a premium perk.</p>
     <button onclick="verify('a')">Verify A</button>
     <button onclick="verify('b')">Verify B</button>
+    <div class="log-label">System Log</div>
     <pre class="out" id="out-verify"></pre>
   </section>
 
   <section class="step">
-    <h2>4. Agent-to-agent negotiation — one match, not a feed <span class="badge">POST /api/matches/find/:userId</span></h2>
+    <span class="chapter-mark">IV</span>
+    <h2>Find your match <span class="badge">POST /api/matches/find/:userId</span></h2>
+    <p class="flavor">Agent-to-agent negotiation. No feed, no swiping — you see exactly <strong>one</strong> compatible person.</p>
     <button onclick="findMatch()">Find best match for A</button>
+    <div class="log-label">System Log</div>
     <pre class="out" id="out-match"></pre>
   </section>
 
   <section class="step">
-    <h2>5. Approve match (both sides) <span class="badge">POST /api/matches/:id/approve</span></h2>
+    <span class="chapter-mark">V</span>
+    <h2>Approve the match <span class="badge">POST /api/matches/:id/approve</span></h2>
+    <p class="flavor">Both sides commit. A closure-commitment deposit gets held the moment you do — the price of admission.</p>
     <button onclick="approve('a')">A approves</button>
     <button onclick="approve('b')">B approves</button>
+    <div class="log-label">System Log</div>
     <pre class="out" id="out-approve"></pre>
   </section>
 
   <section class="step">
-    <h2>6. Trust Quest — real multiplayer leveling <span class="badge">POST /api/matches/:id/trust/respond</span></h2>
-    <p style="color:var(--muted);font-size:0.85rem;margin:0 0 0.75rem">
-      Real prompts, answered by both real accounts. XP is yours alone; trust
-      only moves once <em>both</em> sides have answered the same prompt —
-      hit <span id="threshold-inline">80</span>/100 trust and the match is
-      permanently marked <strong>Guaranteed</strong>.
+    <span class="chapter-mark">VI</span>
+    <h2>Trust Quest <span class="badge">POST /api/matches/:id/trust/respond</span></h2>
+    <p class="flavor">
+      Real prompts, answered by both real accounts. XP is <strong>yours alone</strong>; Bond
+      only moves once <em>both</em> sides answer the same prompt — reach
+      <span id="threshold-inline">80</span>/100 and the match is permanently
+      marked <strong>Guaranteed</strong>.
     </p>
     <div class="row">
-      <div>
-        <div id="promptA" style="font-size:0.85rem;color:var(--muted)">Load A's next prompt to begin.</div>
+      <div class="quest-card">
+        <div id="promptA"><span class="quest-empty">Load A's next prompt to begin.</span></div>
         <button onclick="loadPrompt('a')">A: next prompt</button>
       </div>
-      <div>
-        <div id="promptB" style="font-size:0.85rem;color:var(--muted)">Load B's next prompt to begin.</div>
+      <div class="quest-card">
+        <div id="promptB"><span class="quest-empty">Load B's next prompt to begin.</span></div>
         <button onclick="loadPrompt('b')">B: next prompt</button>
       </div>
     </div>
-    <button class="secondary" onclick="loadTrustStatus()">Refresh match trust</button>
+    <button class="secondary" onclick="loadTrustStatus()">Refresh bond status</button>
+    <div class="guarantee-banner" id="guarantee-banner">✦ Connection Guaranteed — this match can't quietly fade. ✦</div>
+    <div class="log-label">System Log</div>
     <pre class="out" id="out-trust"></pre>
   </section>
 
   <section class="step">
-    <h2>7. Schedule + attend a date <span class="badge">pay-per-date charges on attendance</span></h2>
+    <span class="chapter-mark">VII</span>
+    <h2>The date <span class="badge">pay-per-date charges on attendance</span></h2>
+    <p class="flavor">The app earns nothing for matching, messaging, or scheduling — only when you actually show up.</p>
     <button onclick="scheduleDate()">Schedule date</button>
     <button onclick="attendDate()">Mark attended (charges both)</button>
+    <div class="log-label">System Log</div>
     <pre class="out" id="out-date"></pre>
   </section>
 
   <section class="step">
-    <h2>8. The Closure Guarantee <span class="badge">POST /api/matches/:id/closure</span></h2>
+    <span class="chapter-mark">VIII</span>
+    <h2>The Closure Guarantee <span class="badge">POST /api/matches/:id/closure</span></h2>
+    <p class="flavor">The differentiator. Silence is never an option — a reason from the taxonomy is required, every time.</p>
     <label>Reason
       <select id="reason">
         <option>NOT_A_ROMANTIC_FIT</option>
@@ -211,9 +497,17 @@
     <label>Note (optional, hidden if anonymous) <input id="note" value="Great person, just no romantic spark." /></label>
     <button onclick="closeMatch()">A files closure — no silence allowed</button>
     <button class="secondary" onclick="badClosure()">Try skipping the reason (should fail)</button>
+    <div class="log-label">System Log</div>
     <pre class="out" id="out-closure"></pre>
   </section>
 </main>
+
+<footer class="note">
+  This page plays through the real API, end to end — nothing here is scripted or mocked on
+  the frontend. The HUD above reads live Level/XP/Bond straight out of Postgres the same way
+  two real matched users would see it.
+</footer>
+
 <script>
 const state = { a: {}, b: {}, matchId: null, dateId: null };
 
@@ -230,6 +524,36 @@ async function api(method, path, body) {
 function show(id, value) {
   document.getElementById(id).textContent =
     typeof value === "string" ? value : JSON.stringify(value, null, 2);
+}
+
+function renderHudSide(prefix, displayName, level, xp) {
+  document.getElementById(prefix + "-level").textContent = level;
+  document.getElementById(prefix + "-name").textContent = displayName;
+  const pct = xp.span > 0 ? Math.min(100, Math.round((xp.into / xp.span) * 100)) : 100;
+  document.getElementById(prefix + "-xp").style.width = pct + "%";
+}
+
+async function refreshHud() {
+  if (!state.matchId) return;
+  const { data } = await api("GET", `/api/matches/${state.matchId}/trust`);
+  if (!data.userA) return;
+  renderHudSide("hud-a", data.userA.displayName, data.userA.level, data.userA.xp);
+  renderHudSide("hud-b", data.userB.displayName, data.userB.level, data.userB.xp);
+
+  const fill = document.getElementById("hud-bond-fill");
+  const value = document.getElementById("hud-bond-value");
+  fill.style.width = data.trust + "%";
+  value.textContent = data.trust + "/100";
+  if (data.guaranteedAt) {
+    fill.classList.add("guaranteed");
+    value.classList.add("guaranteed");
+    value.textContent = "GUARANTEED";
+    document.getElementById("guarantee-banner").classList.add("show");
+  } else {
+    fill.classList.remove("guaranteed");
+    value.classList.remove("guaranteed");
+    document.getElementById("guarantee-banner").classList.remove("show");
+  }
 }
 
 async function createUser(who) {
@@ -262,11 +586,13 @@ async function findMatch() {
   const { data } = await api("POST", `/api/matches/find/${state.a.id}`);
   state.matchId = data.id;
   show("out-match", data);
+  await refreshHud();
 }
 
 async function approve(who) {
   const { data } = await api("POST", `/api/matches/${state.matchId}/approve`, { userId: state[who].id });
   show("out-approve", data);
+  await refreshHud();
 }
 
 const trustState = { a: null, b: null };
@@ -275,18 +601,18 @@ function renderPrompt(who) {
   const el = document.getElementById("prompt" + who.toUpperCase());
   const p = trustState[who];
   if (!p) {
-    el.innerHTML = "No prompts left for " + who.toUpperCase() + " on this match.";
+    el.innerHTML = '<span class="quest-empty">No prompts left for ' + who.toUpperCase() + " on this match.</span>";
     return;
   }
   const optionButtons = p.options
     .map(
       (o) =>
-        `<button data-style="${o.style}" onclick="respondPrompt('${who}', ${p.promptIndex}, '${o.style}')" style="display:block;width:100%;text-align:left;margin-top:0.4rem">${o.style}: ${o.label}</button>`,
+        `<button class="choice" data-style="${o.style}" onclick="respondPrompt('${who}', ${p.promptIndex}, '${o.style}')"><span class="style-tag">${o.style}</span>${o.label}</button>`,
     )
     .join("");
   el.innerHTML =
-    `<strong style="color:var(--text)">${p.question}</strong>` +
-    (p.hint ? `<div style="color:var(--ok);margin-top:0.3rem">💡 ${p.hint}</div>` : "") +
+    `<div class="quest-question">${p.question}</div>` +
+    (p.hint ? `<div class="quest-hint">💡 ${p.hint}</div>` : "") +
     optionButtons;
 }
 
@@ -304,12 +630,13 @@ async function respondPrompt(who, promptIndex, style) {
   });
   show("out-trust", data);
   await loadPrompt(who);
-  await loadTrustStatus();
+  await refreshHud();
 }
 
 async function loadTrustStatus() {
   const { data } = await api("GET", `/api/matches/${state.matchId}/trust`);
   show("out-trust", data);
+  await refreshHud();
 }
 
 async function scheduleDate() {
