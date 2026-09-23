@@ -54,6 +54,22 @@ dropping schemas in. Each test file gets its own uniquely-named schema via
 string), so they never collide with your dev data or each other, even
 running concurrently.
 
+## Deploying
+
+`render.yaml` is a [Render Blueprint](https://render.com/docs/blueprint-spec):
+it declares the web service and its Postgres database together, and wires
+`DATABASE_URL` between them by reference (`fromDatabase`) — Render resolves
+the actual connection string itself, server-side, on every deploy. Nobody
+ever needs to read, copy, or paste it by hand.
+
+To apply it: in the Render dashboard, **New → Blueprint**, point it at this
+repo. This project's own deployed copy (`closure-app` + `closure-db`) was
+originally created before this file existed, as two separate standalone
+resources with the database's connection string set manually — if Render's
+Blueprint sync detects them and offers to adopt them under blueprint
+management, accept that; if it creates fresh ones instead, the old
+standalone pair can be deleted once the new ones are confirmed working.
+
 ## How the spec maps to the code
 
 | Spec mechanic | Where it lives |

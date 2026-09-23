@@ -1,0 +1,37 @@
+# Render Blueprint — infrastructure as code for CLOSURE.
+#
+# Wires the web service's DATABASE_URL to the Postgres database by
+# reference (fromDatabase), so Render resolves the connection string
+# server-side on every deploy. Nobody — not a human, not this session —
+# ever has to read, copy, or paste the credential by hand.
+#
+# To apply: in the Render dashboard, "New" -> "Blueprint", point it at
+# this repo. If it detects the existing "closure-app" service and
+# "closure-db" database (already running from before this file existed),
+# it offers to adopt them under blueprint management rather than create
+# duplicates — accept that. If it creates fresh ones instead, the old
+# standalone ones can be deleted once the new ones are confirmed working.
+#
+# See README.md's Quickstart for what DATABASE_URL needs to point at when
+# running this outside Render (local dev, tests, another host).
+
+databases:
+  - name: closure-db
+    plan: free
+    region: oregon
+    postgresMajorVersion: "16"
+
+services:
+  - type: web
+    name: closure-app
+    runtime: node
+    plan: free
+    region: oregon
+    branch: claude/closure-dating-app-j1cavr
+    buildCommand: npm install --include=dev && npx prisma generate && npx prisma db push --skip-generate && npm run build && npm run db:seed
+    startCommand: npm start
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: closure-db
+          property: connectionString
