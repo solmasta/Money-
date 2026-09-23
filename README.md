@@ -69,6 +69,44 @@ running concurrently.
 | Mandatory ID + liveness verification | `src/adapters/mock.ts` (`MockVerificationProvider`), `POST /api/users/:id/verify` |
 | Intent locked 30 days, separate matching pools | `src/domain/intent.ts` |
 | Vouching web | `src/routes/vouches.ts`, `Vouch` model |
+| **Real multiplayer leveling** — trust built between two real matched users, XP, perks, guaranteed connections | `src/domain/leveling.ts`, `src/domain/trustPrompts.ts`, `src/domain/promptPool.ts`, `POST /api/matches/:id/trust/respond` |
+
+## Real multiplayer leveling
+
+Validated first as a standalone playable prototype (scripted NPCs, browser
+`localStorage` only — no backend), then built into the real app: real
+accounts, real persisted state in Postgres, trust that only moves when two
+actual matched users both participate.
+
+- **The mechanic**: `src/domain/promptPool.ts` holds a fixed pool of real
+  trust-building prompts, shared across every match. Each prompt offers
+  three ways to engage — `DIRECT`, `GUARDED`, `DEFLECT` — mirroring the
+  same honesty/follow-through axis the rest of the app is built around,
+  not generic dialogue flavor.
+- **XP is yours alone.** `src/domain/leveling.ts`'s `XP_FOR_STYLE` awards
+  xp to whichever user responds, the moment they respond — independent of
+  whether or how their match answers. Leveling reflects your own proven
+  behavior, not time spent in the app; `User.xp` only ever goes up, kept
+  deliberately separate from `accountabilityScore` (a penalty ledger that
+  can fall).
+- **Trust is mutual — one person can't move it alone.**
+  `src/domain/trustPrompts.ts`'s `respondToPrompt` only resolves a trust
+  delta onto the `Match` once *both* sides have answered the same prompt
+  (`trustDeltaForPair` in `leveling.ts` — mutual directness earns the
+  most, one-sided honesty earns some credit, mutual deflection actively
+  costs trust). Crossing `GUARANTEE_TRUST` (80/100) sets `Match.guaranteedAt`
+  once, permanently — the real, database-backed version of "a certain
+  point guarantees a connection."
+- **Perks are honestly labeled real vs. not yet.** Each entry in `PERKS`
+  (`src/domain/leveling.ts`) carries `implemented: true` or `false`. Level
+  2's "Read the room" is real: it surfaces the counterpart's top declared
+  value (`PreferenceProfile.values[0]`) as a hint before you answer their
+  next prompt — actual profile data already in the database, not a
+  scripted line. The rest (faster matching, a lower bar to guarantee a
+  connection, a vouch counting double, ...) are `implemented: false` —
+  stated design intent, returned by the API and shown in the demo UI, but
+  not yet wired to change any real behavior. Same honesty this README
+  tries to hold itself to everywhere else about what's built vs. planned.
 
 ## Architecture notes
 
@@ -238,6 +276,20 @@ Not implemented:
   Whether a no-show or cancellation should end the match automatically or
   leave it open for a reschedule is a product decision, not just a wiring
   gap, so it's left as-is rather than guessed at.
+- "Multiplayer" (see above) means real accounts and real persisted trust
+  between two real matched users, resolved turn-by-turn through
+  `POST /api/matches/:id/trust/respond` — not a live, real-time shared
+  world. There's no WebSocket layer, no presence, no players seeing each
+  other move; each side calls the API on their own schedule and the
+  server resolves trust once both have answered. A real-time version
+  (live position, a rendered map) is a separate, much larger build this
+  doesn't attempt.
+- Most `PERKS` (`src/domain/leveling.ts`) are informational — returned by
+  the API and shown in the demo UI, but not wired to change any actual
+  behavior yet. Each one is explicitly marked `implemented: true` or
+  `false` so this stays honest rather than silently overclaiming; only
+  level 1 (one match at a time) and level 2 ("Read the room") do
+  anything real today.
 
 ## Project layout
 
@@ -245,7 +297,7 @@ Not implemented:
 prisma/schema.prisma   data model
 prisma/seed.ts          demo seed data
 src/adapters/           external-service interfaces + mocks
-src/domain/             business logic (matching, closure, dates, payments, intent, escrow, silence enforcement, accountability reset, no-shows)
+src/domain/             business logic (matching, closure, dates, payments, intent, escrow, silence enforcement, accountability reset, no-shows, leveling)
 src/routes/             Express route handlers
 src/jobs/scheduler.ts   in-process interval runner for both scheduled sweeps
 scripts/                one-shot entry points for external schedulers (cron, k8s CronJob, ...)

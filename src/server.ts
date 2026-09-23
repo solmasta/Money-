@@ -5,6 +5,7 @@ import { matchesRouter } from "./routes/matches.js";
 import { datesRouter } from "./routes/dates.js";
 import { successRouter } from "./routes/success.js";
 import { vouchesRouter } from "./routes/vouches.js";
+import { trustRouter } from "./routes/trust.js";
 import { prisma } from "./db.js";
 import { startEnforceSilenceScheduler, startAccountabilityResetScheduler } from "./jobs/scheduler.js";
 
@@ -25,6 +26,7 @@ app.use("/api/matches", matchesRouter);
 app.use("/api/vouches", vouchesRouter);
 app.use("/api", datesRouter);
 app.use("/api", successRouter);
+app.use("/api", trustRouter);
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

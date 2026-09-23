@@ -32,6 +32,13 @@ model User {
   verificationStatus String   @default("UNVERIFIED")
   accountabilityScore Float   @default(100) // starts at 100, moves with behavior
 
+  // Leveling (src/domain/leveling.ts): xp only ever goes up, earned by
+  // answering real trust prompts honestly with real matches — distinct
+  // from accountabilityScore, which is a penalty/trust ledger that can
+  // fall. Level itself is derived from xp (levelForXp), not stored.
+  xp                 Int      @default(0)
+  promptResponses    MatchPromptResponse[]
+
   /// "CASUAL" | "LONG_TERM" | "MARRIAGE_MINDED" | "UNSURE" — see src/domain/intent.ts
   intent             String   @default("UNSURE")
   intentLockedAt     DateTime?
@@ -95,8 +102,17 @@ model Match {
   status          String      @default("PROPOSED")
   createdAt       DateTime    @default(now())
 
+  // Trust (src/domain/leveling.ts, src/domain/trustPrompts.ts): earned
+  // mutually, from real prompt-response pairs where BOTH matched users
+  // have answered — one side's honesty alone can't move it. Reaching
+  // GUARANTEE_TRUST sets guaranteedAt once, permanently: a real,
+  // database-backed "this connection is locked in."
+  trust           Int         @default(0)
+  guaranteedAt    DateTime?
+
   dates           DateProposal[]
   closureEvents   ClosureEvent[]
+  promptResponses MatchPromptResponse[]
 
   @@unique([userAId, userBId])
 }
@@ -170,6 +186,26 @@ model AccountabilityLedgerEntry {
   createdAt      DateTime  @default(now())
   expiresAt      DateTime? // when a penalty should auto-reverse; null on reversal entries
   reversedAt     DateTime? // set once the sweep reverses this penalty
+}
+
+// One row per (match, prompt, user): records how a real user chose to
+// answer one of the shared trust-building prompts (src/domain/promptPool.ts)
+// for a real match. A prompt only pays out trust to the Match once BOTH
+// sides have answered it — see resolvePromptTrust in
+// src/domain/trustPrompts.ts. XP is awarded to each user immediately on
+// their own response, independent of the other side.
+model MatchPromptResponse {
+  id           String   @id @default(cuid())
+  matchId      String
+  match        Match    @relation(fields: [matchId], references: [id])
+  promptIndex  Int      // index into the shared PROMPT_POOL array
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  /// "DIRECT" | "GUARDED" | "DEFLECT" — see RESPONSE_STYLES in src/domain/leveling.ts
+  style        String
+  createdAt    DateTime @default(now())
+
+  @@unique([matchId, promptIndex, userId])
 }
 
 model Payment {

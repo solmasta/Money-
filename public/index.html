@@ -163,14 +163,36 @@
   </section>
 
   <section class="step">
-    <h2>6. Schedule + attend a date <span class="badge">pay-per-date charges on attendance</span></h2>
+    <h2>6. Trust Quest — real multiplayer leveling <span class="badge">POST /api/matches/:id/trust/respond</span></h2>
+    <p style="color:var(--muted);font-size:0.85rem;margin:0 0 0.75rem">
+      Real prompts, answered by both real accounts. XP is yours alone; trust
+      only moves once <em>both</em> sides have answered the same prompt —
+      hit <span id="threshold-inline">80</span>/100 trust and the match is
+      permanently marked <strong>Guaranteed</strong>.
+    </p>
+    <div class="row">
+      <div>
+        <div id="promptA" style="font-size:0.85rem;color:var(--muted)">Load A's next prompt to begin.</div>
+        <button onclick="loadPrompt('a')">A: next prompt</button>
+      </div>
+      <div>
+        <div id="promptB" style="font-size:0.85rem;color:var(--muted)">Load B's next prompt to begin.</div>
+        <button onclick="loadPrompt('b')">B: next prompt</button>
+      </div>
+    </div>
+    <button class="secondary" onclick="loadTrustStatus()">Refresh match trust</button>
+    <pre class="out" id="out-trust"></pre>
+  </section>
+
+  <section class="step">
+    <h2>7. Schedule + attend a date <span class="badge">pay-per-date charges on attendance</span></h2>
     <button onclick="scheduleDate()">Schedule date</button>
     <button onclick="attendDate()">Mark attended (charges both)</button>
     <pre class="out" id="out-date"></pre>
   </section>
 
   <section class="step">
-    <h2>7. The Closure Guarantee <span class="badge">POST /api/matches/:id/closure</span></h2>
+    <h2>8. The Closure Guarantee <span class="badge">POST /api/matches/:id/closure</span></h2>
     <label>Reason
       <select id="reason">
         <option>NOT_A_ROMANTIC_FIT</option>
@@ -245,6 +267,49 @@ async function findMatch() {
 async function approve(who) {
   const { data } = await api("POST", `/api/matches/${state.matchId}/approve`, { userId: state[who].id });
   show("out-approve", data);
+}
+
+const trustState = { a: null, b: null };
+
+function renderPrompt(who) {
+  const el = document.getElementById("prompt" + who.toUpperCase());
+  const p = trustState[who];
+  if (!p) {
+    el.innerHTML = "No prompts left for " + who.toUpperCase() + " on this match.";
+    return;
+  }
+  const optionButtons = p.options
+    .map(
+      (o) =>
+        `<button data-style="${o.style}" onclick="respondPrompt('${who}', ${p.promptIndex}, '${o.style}')" style="display:block;width:100%;text-align:left;margin-top:0.4rem">${o.style}: ${o.label}</button>`,
+    )
+    .join("");
+  el.innerHTML =
+    `<strong style="color:var(--text)">${p.question}</strong>` +
+    (p.hint ? `<div style="color:var(--ok);margin-top:0.3rem">💡 ${p.hint}</div>` : "") +
+    optionButtons;
+}
+
+async function loadPrompt(who) {
+  const { data } = await api("GET", `/api/matches/${state.matchId}/trust/next?userId=${state[who].id}`);
+  trustState[who] = data.prompt;
+  renderPrompt(who);
+}
+
+async function respondPrompt(who, promptIndex, style) {
+  const { data } = await api("POST", `/api/matches/${state.matchId}/trust/respond`, {
+    userId: state[who].id,
+    promptIndex,
+    style,
+  });
+  show("out-trust", data);
+  await loadPrompt(who);
+  await loadTrustStatus();
+}
+
+async function loadTrustStatus() {
+  const { data } = await api("GET", `/api/matches/${state.matchId}/trust`);
+  show("out-trust", data);
 }
 
 async function scheduleDate() {
