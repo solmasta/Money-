@@ -1,42 +1,197 @@
 {
   "as_of": "2026-10-16",
-  "start_balance": 834.18,
-  "start_balance_note": "BoA checking *4265 balance after last txn seen on 2026-10-14. Oct 15-16 activity unknown - CONFIRM.",
+  "start_balance": 422.95,
+  "start_balance_note": "BoA checking *4265 per app screenshot (Oct 16 evening). Savings *8937 = $29.32.",
   "events": [
-    {"d":"2026-10-19","label":"Nicor Gas (autopay)","amt":-106.00,"kind":"auto"},
-    {"d":"2026-10-19","label":"GitHub (autopay, worst case $4 + usage)","amt":-33.00,"kind":"auto"},
-    {"d":"2026-10-21","label":"Xfinity Mobile (autopay)","amt":-167.85,"kind":"auto"},
-    {"d":"2026-10-21","label":"Uphold deposit -> move to BoA","amt":250.00,"kind":"income"},
-    {"d":"2026-10-23","label":"PAYCHECK (JLL)","amt":2604.28,"kind":"income"},
-    {"d":"2026-10-23","label":"Dave ExtraCash settlement (autopay)","amt":-654.97,"kind":"auto"},
-    {"d":"2026-10-23","label":"Earnin repayment (autopay)","amt":-150.00,"kind":"auto"},
-    {"d":"2026-10-23","label":"Brigit Plus (autopay)","amt":-8.99,"kind":"auto"},
-    {"d":"2026-10-23","label":"Crunchyroll (autopay)","amt":-9.99,"kind":"auto"},
-    {"d":"2026-10-23","label":"MORTGAGE - October (modification)","amt":-1591.00,"kind":"manual"},
-    {"d":"2026-10-23","label":"Zelle to wife","amt":-150.00,"kind":"manual"},
-    {"d":"2026-10-24","label":"Walmart Spend Card minimum (due 10/25)","amt":-30.00,"kind":"manual"},
-    {"d":"2026-10-26","label":"ComEd past due (shutoff deadline 10/28)","amt":-690.31,"kind":"manual"},
-    {"d":"2026-10-27","label":"American Dance (autopay)","amt":-192.62,"kind":"auto"},
-    {"d":"2026-10-27","label":"Blizzard (autopay)","amt":-16.08,"kind":"auto"},
-    {"d":"2026-10-31","label":"Dave membership (autopay)","amt":-3.00,"kind":"auto"},
-    {"d":"2026-11-01","label":"Capital One minimum (autopay)","amt":-25.00,"kind":"auto"},
-    {"d":"2026-11-01","label":"Blizzard (autopay)","amt":-16.53,"kind":"auto"},
-    {"d":"2026-11-04","label":"Uphold deposit -> move to BoA","amt":250.00,"kind":"income"},
-    {"d":"2026-11-05","label":"Upstart $6,700 loan (manual)","amt":-213.00,"kind":"manual"},
-    {"d":"2026-11-06","label":"PAYCHECK (JLL)","amt":2604.28,"kind":"income"},
-    {"d":"2026-11-06","label":"Life insurance","amt":-126.10,"kind":"auto"},
-    {"d":"2026-11-06","label":"Zelle to wife","amt":-150.00,"kind":"manual"},
-    {"d":"2026-11-06","label":"MORTGAGE - November (modification; due date TBD)","amt":-1591.00,"kind":"manual"},
-    {"d":"2026-11-10","label":"American Dance (autopay)","amt":-192.62,"kind":"auto"},
-    {"d":"2026-11-12","label":"Walmart Pay Later - tires (autopay)","amt":-49.66,"kind":"auto"},
-    {"d":"2026-11-12","label":"Claude subscription","amt":-22.05,"kind":"auto"},
-    {"d":"2026-11-14","label":"Upstart $1,500 loan (autopay)","amt":-50.71,"kind":"auto"}
+    {
+      "d": "2026-10-19",
+      "label": "Nicor Gas (autopay)",
+      "amt": -106.0,
+      "kind": "auto"
+    },
+    {
+      "d": "2026-10-19",
+      "label": "GitHub (autopay, worst case $4 + usage)",
+      "amt": -33.0,
+      "kind": "auto"
+    },
+    {
+      "d": "2026-10-21",
+      "label": "Xfinity Mobile (autopay)",
+      "amt": -167.85,
+      "kind": "auto"
+    },
+    {
+      "d": "2026-10-21",
+      "label": "Uphold deposit -> move to BoA",
+      "amt": 250.0,
+      "kind": "income"
+    },
+    {
+      "d": "2026-10-23",
+      "label": "PAYCHECK (JLL)",
+      "amt": 2604.28,
+      "kind": "income"
+    },
+    {
+      "d": "2026-10-23",
+      "label": "Dave ExtraCash settlement (autopay)",
+      "amt": -654.97,
+      "kind": "auto"
+    },
+    {
+      "d": "2026-10-23",
+      "label": "Earnin repayment (autopay)",
+      "amt": -150.0,
+      "kind": "auto"
+    },
+    {
+      "d": "2026-10-23",
+      "label": "Brigit Plus (autopay)",
+      "amt": -8.99,
+      "kind": "auto"
+    },
+    {
+      "d": "2026-10-23",
+      "label": "Crunchyroll (autopay)",
+      "amt": -9.99,
+      "kind": "auto"
+    },
+    {
+      "d": "2026-10-23",
+      "label": "MORTGAGE - October (modification)",
+      "amt": -1591.0,
+      "kind": "manual"
+    },
+    {
+      "d": "2026-10-23",
+      "label": "Zelle to wife",
+      "amt": -150.0,
+      "kind": "manual"
+    },
+    {
+      "d": "2026-10-24",
+      "label": "Walmart Spend Card minimum (due 10/25)",
+      "amt": -30.0,
+      "kind": "manual"
+    },
+    {
+      "d": "2026-10-26",
+      "label": "ComEd past due (shutoff deadline 10/28)",
+      "amt": -690.31,
+      "kind": "manual"
+    },
+    {
+      "d": "2026-10-27",
+      "label": "American Dance (autopay)",
+      "amt": -192.62,
+      "kind": "auto"
+    },
+    {
+      "d": "2026-10-27",
+      "label": "Blizzard (autopay)",
+      "amt": -16.08,
+      "kind": "auto"
+    },
+    {
+      "d": "2026-10-31",
+      "label": "Dave membership (autopay)",
+      "amt": -3.0,
+      "kind": "auto"
+    },
+    {
+      "d": "2026-11-01",
+      "label": "Capital One minimum (autopay)",
+      "amt": -25.0,
+      "kind": "auto"
+    },
+    {
+      "d": "2026-11-01",
+      "label": "Blizzard (autopay)",
+      "amt": -16.53,
+      "kind": "auto"
+    },
+    {
+      "d": "2026-11-04",
+      "label": "Uphold deposit -> move to BoA",
+      "amt": 250.0,
+      "kind": "income"
+    },
+    {
+      "d": "2026-11-05",
+      "label": "Upstart $6,700 loan (manual)",
+      "amt": -213.0,
+      "kind": "manual"
+    },
+    {
+      "d": "2026-11-06",
+      "label": "PAYCHECK (JLL)",
+      "amt": 2604.28,
+      "kind": "income"
+    },
+    {
+      "d": "2026-11-06",
+      "label": "Life insurance",
+      "amt": -126.1,
+      "kind": "auto"
+    },
+    {
+      "d": "2026-11-06",
+      "label": "Zelle to wife",
+      "amt": -150.0,
+      "kind": "manual"
+    },
+    {
+      "d": "2026-11-06",
+      "label": "MORTGAGE - November (modification; due date TBD)",
+      "amt": -1591.0,
+      "kind": "manual"
+    },
+    {
+      "d": "2026-11-10",
+      "label": "American Dance (autopay)",
+      "amt": -192.62,
+      "kind": "auto"
+    },
+    {
+      "d": "2026-11-12",
+      "label": "Walmart Pay Later - tires (autopay)",
+      "amt": -49.66,
+      "kind": "auto"
+    },
+    {
+      "d": "2026-11-12",
+      "label": "Claude subscription",
+      "amt": -22.05,
+      "kind": "auto"
+    },
+    {
+      "d": "2026-11-14",
+      "label": "Upstart $1,500 loan (autopay)",
+      "amt": -50.71,
+      "kind": "auto"
+    }
   ],
   "backlog": [
-    {"label":"Arivo loan - October (was due 10/20)","amt":952.17},
-    {"label":"Water (due 10/20)","amt":375.19},
-    {"label":"Garbage - quarterly (due 10/20)","amt":141.57},
-    {"label":"ComEd current bill (due 10/16)","amt":321.64},
-    {"label":"Xfinity internet (was due 10/14)","amt":170.34}
+    {
+      "label": "Arivo loan - October (was due 10/20)",
+      "amt": 952.17
+    },
+    {
+      "label": "Water (due 10/20)",
+      "amt": 375.19
+    },
+    {
+      "label": "Garbage - quarterly (due 10/20)",
+      "amt": 141.57
+    },
+    {
+      "label": "ComEd current bill (due 10/16)",
+      "amt": 321.64
+    },
+    {
+      "label": "Xfinity internet (was due 10/14)",
+      "amt": 170.34
+    }
   ]
 }
