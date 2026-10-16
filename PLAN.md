@@ -1,13 +1,13 @@
 # Bill Plan: Oct 16 - Nov 23, 2026
 
 Built from `data/events.json` (run `python3 plan.py` to recompute). Pool = BoA checking *4265.
-Paychecks: $2,604.28 on Oct 23, Nov 6, Nov 20. Uphold $250 on Oct 21, Nov 4, Nov 18 (separate account; must be moved to BoA to count).
+Paychecks: $2,604.28 on Oct 23, Nov 6, Nov 20. Uphold $250 on Oct 21, Nov 4, Nov 18 goes to the Uphold debit card and is spent directly (daily spending) - **not** counted in the BoA numbers below.
 
 ## Bottom line
-- The plan **works by Nov 23** (about +$1,434 before the $1,961 backlog; about $480 left after clearing it) **if** the Oct 23 paycheck lands before the autopays pull.
-- It does **not** work day to day: with ComEd paid in full on Oct 26, checking is negative from Oct 26 to Nov 5, bottoming at **-$526** on Nov 1. You already hit overdraft on Oct 13.
-- The $1,960.91 backlog (Arivo Oct, water, garbage, ComEd current, Xfinity internet) is paid **after** the Nov 6 paycheck, split across Nov 6-10 (small bills) and Nov 20 (Arivo Oct).
-- Mortgage is **autopay $1,548.91 on Oct 23 and Nov 20** (both are paydays - paycheck must post before the draw).
+- **It does not fully work on income alone.** Without Uphold in BoA, checking goes negative from Oct 26 (ComEd paid in full) and bottoms at **-$989 on Nov 5**; it recovers on the Nov 6 paycheck.
+- By Nov 23 checking is **+$684**, but the **$1,960.91 backlog** is still unpaid, so the true gap through Nov 23 is about **-$1,276**.
+- Not modeled: gas/food/other spending from BoA (Amoco, Walmart, etc. show up in your transactions). Uphold's $250 covers some of it; anything BoA pays makes this worse.
+- Mortgage is **autopay $1,548.91 on Oct 23 and Nov 20** (both paydays - the paycheck must post before the draw).
 - Starting balance is real: checking $422.95, savings $29.32 (Oct 16).
 
 ## Priority order (consequence if missed)
@@ -26,42 +26,39 @@ Date       Item                                                     Amount     B
 2026-10-19 Nicor Gas (autopay)                                     -106.00      316.95
 2026-10-19 GitHub (autopay, worst case $4 + usage)                  -33.00      283.95
 2026-10-21 Xfinity Mobile (autopay)                                -167.85      116.10
-2026-10-21 Uphold deposit -> move to BoA                            250.00      366.10
-2026-10-23 PAYCHECK (JLL)                                         2,604.28    2,970.38
-2026-10-23 Dave ExtraCash settlement (autopay)                     -654.97    2,315.41
-2026-10-23 Earnin repayment (autopay)                              -150.00    2,165.41
-2026-10-23 Brigit Plus (autopay)                                     -8.99    2,156.42
-2026-10-23 Crunchyroll (autopay)                                     -9.99    2,146.43
-2026-10-23 MORTGAGE - October (autopay, modification)            -1,548.91      597.52
-2026-10-23 Zelle to wife                                           -150.00      447.52
-2026-10-24 Walmart Spend Card minimum (due 10/25)                   -30.00      417.52
-2026-10-26 ComEd past due (shutoff deadline 10/28)                 -690.31     -272.79  <-- NEGATIVE
-2026-10-27 American Dance (autopay)                                -192.62     -465.41  <-- NEGATIVE
-2026-10-27 Blizzard (autopay)                                       -16.08     -481.49  <-- NEGATIVE
-2026-10-31 Dave membership (autopay)                                 -3.00     -484.49  <-- NEGATIVE
-2026-11-01 Capital One minimum (autopay)                            -25.00     -509.49  <-- NEGATIVE
-2026-11-01 Blizzard (autopay)                                       -16.53     -526.02  <-- NEGATIVE
-2026-11-04 Uphold deposit -> move to BoA                            250.00     -276.02  <-- NEGATIVE
-2026-11-05 Upstart $6,700 loan (manual)                            -213.00     -489.02  <-- NEGATIVE
-2026-11-06 PAYCHECK (JLL)                                         2,604.28    2,115.26
-2026-11-06 Life insurance                                          -126.10    1,989.16
-2026-11-06 Zelle to wife                                           -150.00    1,839.16
-2026-11-10 American Dance (autopay)                                -192.62    1,646.54
-2026-11-12 Walmart Pay Later - tires (autopay)                      -49.66    1,596.88
-2026-11-12 Claude subscription                                      -22.05    1,574.83
-2026-11-14 Upstart $1,500 loan (autopay)                            -50.71    1,524.12
-2026-11-18 Uphold deposit -> move to BoA                            250.00    1,774.12
-2026-11-19 Nicor Gas (autopay)                                     -106.00    1,668.12
-2026-11-20 PAYCHECK (JLL)                                         2,604.28    4,272.40
-2026-11-20 Zelle to wife                                           -150.00    4,122.40
-2026-11-20 Arivo loan - November                                   -952.17    3,170.23
-2026-11-20 MORTGAGE - November (autopay, modification)           -1,548.91    1,621.32
-2026-11-21 Xfinity Mobile (autopay)                                -167.85    1,453.47
-2026-11-23 Brigit Plus + Crunchyroll                                -18.98    1,434.49
+2026-10-23 PAYCHECK (JLL)                                         2,604.28    2,720.38
+2026-10-23 Dave ExtraCash settlement (autopay)                     -654.97    2,065.41
+2026-10-23 Earnin repayment (autopay)                              -150.00    1,915.41
+2026-10-23 Brigit Plus (autopay)                                     -8.99    1,906.42
+2026-10-23 Crunchyroll (autopay)                                     -9.99    1,896.43
+2026-10-23 MORTGAGE - October (autopay, modification)            -1,548.91      347.52
+2026-10-23 Zelle to wife                                           -150.00      197.52
+2026-10-24 Walmart Spend Card minimum (due 10/25)                   -30.00      167.52
+2026-10-26 ComEd past due (shutoff deadline 10/28)                 -690.31     -522.79  <-- NEGATIVE
+2026-10-27 American Dance (autopay)                                -192.62     -715.41  <-- NEGATIVE
+2026-10-27 Blizzard (autopay)                                       -16.08     -731.49  <-- NEGATIVE
+2026-10-31 Dave membership (autopay)                                 -3.00     -734.49  <-- NEGATIVE
+2026-11-01 Capital One minimum (autopay)                            -25.00     -759.49  <-- NEGATIVE
+2026-11-01 Blizzard (autopay)                                       -16.53     -776.02  <-- NEGATIVE
+2026-11-05 Upstart $6,700 loan (manual)                            -213.00     -989.02  <-- NEGATIVE
+2026-11-06 PAYCHECK (JLL)                                         2,604.28    1,615.26
+2026-11-06 Life insurance                                          -126.10    1,489.16
+2026-11-06 Zelle to wife                                           -150.00    1,339.16
+2026-11-10 American Dance (autopay)                                -192.62    1,146.54
+2026-11-12 Walmart Pay Later - tires (autopay)                      -49.66    1,096.88
+2026-11-12 Claude subscription                                      -22.05    1,074.83
+2026-11-14 Upstart $1,500 loan (autopay)                            -50.71    1,024.12
+2026-11-19 Nicor Gas (autopay)                                     -106.00      918.12
+2026-11-20 PAYCHECK (JLL)                                         2,604.28    3,522.40
+2026-11-20 Zelle to wife                                           -150.00    3,372.40
+2026-11-20 Arivo loan - November                                   -952.17    2,420.23
+2026-11-20 MORTGAGE - November (autopay, modification)           -1,548.91      871.32
+2026-11-21 Xfinity Mobile (autopay)                                -167.85      703.47
+2026-11-23 Brigit Plus + Crunchyroll                                -18.98      684.49
 
-Lowest balance: $-526.02 on 2026-11-01
-Balance at horizon: $1,434.49
-Unscheduled backlog: $1,960.91  ->  net after backlog: $-526.42
+Lowest balance: $-989.02 on 2026-11-05
+Balance at horizon: $684.49
+Unscheduled backlog: $1,960.91  ->  net after backlog: $-1,276.42
    Arivo loan - October (was due 10/20)                952.17
    Water (due 10/20)                                   375.19
    Garbage - quarterly (due 10/20)                     141.57
@@ -79,9 +76,12 @@ Unscheduled backlog: $1,960.91  ->  net after backlog: $-526.42
 | Water / Homewood Disposal | Pay-in-two arrangement; garbage late fee is 1.5%/month. |
 | Xfinity | Pay $170.34 on Nov 6; ask if service suspends before then. |
 
-## Closing the Oct 26 - Nov 5 hole (~$526 at its worst)
-Best fix first: a **ComEd payment arrangement / energy assistance** so you pay a down payment instead of the full $690.31 by Oct 28 (saves up to ~$690 right where the dip is).
-If ComEd must be paid in full: bridge with Grant ($250) + Thrive (up to $500), repaid on Nov 6. Each repayment lands on a payday, so borrow only what is needed. Brigit (up to $170) is a backup.
+## Closing the hole (Oct 26 - Nov 5 dip of up to ~$989, plus ~$1,276 backlog)
+Do these in order; each one shrinks the next:
+1. **ComEd arrangement / energy assistance** - replace the $690.31 payment with a small down payment. Saves roughly $500+ right at the dip.
+2. **Arivo deferral or due-date move** and **water / garbage / Xfinity payment plans** - pushes ~$1,960 of backlog past Nov 20 instead of into the dip.
+3. **Bridge the remainder** with Grant ($250) + Thrive (up to $500) (+ Brigit up to $170 if needed), repaid on the Nov 6 payday. These are repaid from the same paychecks, so borrow the minimum.
+4. **Close the leak** (below) so the Oct 23 hole does not repeat on Nov 6 / Nov 20.
 
 ## Stop the leak
 - Dave ExtraCash cycle costs ~$40 in fees per advance + $3/mo; Brigit $8.99/mo. Break the cycle once the October hole is closed.

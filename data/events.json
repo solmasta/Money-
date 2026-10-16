@@ -22,12 +22,6 @@
       "kind": "auto"
     },
     {
-      "d": "2026-10-21",
-      "label": "Uphold deposit -> move to BoA",
-      "amt": 250.0,
-      "kind": "income"
-    },
-    {
       "d": "2026-10-23",
       "label": "PAYCHECK (JLL)",
       "amt": 2604.28,
@@ -112,12 +106,6 @@
       "kind": "auto"
     },
     {
-      "d": "2026-11-04",
-      "label": "Uphold deposit -> move to BoA",
-      "amt": 250.0,
-      "kind": "income"
-    },
-    {
       "d": "2026-11-05",
       "label": "Upstart $6,700 loan (manual)",
       "amt": -213.0,
@@ -164,12 +152,6 @@
       "label": "Upstart $1,500 loan (autopay)",
       "amt": -50.71,
       "kind": "auto"
-    },
-    {
-      "d": "2026-11-18",
-      "label": "Uphold deposit -> move to BoA",
-      "amt": 250.0,
-      "kind": "income"
     },
     {
       "d": "2026-11-19",
@@ -236,5 +218,5 @@
       "amt": 170.34
     }
   ],
-  "note": "Horizon extended to Nov 23."
+  "note": "Uphold $250 (Wed before payday) is spent directly on the Uphold debit card (daily spending); NOT moved to BoA, so it is excluded from this BoA projection. Variable BoA spending (gas, food) is not modeled."
 }
