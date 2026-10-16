@@ -7,11 +7,11 @@ Paychecks: $2,604.28 on Oct 23, Nov 6, Nov 20. Uphold $250 on Oct 21, Nov 4, Nov
 - The plan **works by Nov 23** (about +$1,434 before the $1,961 backlog; about $480 left after clearing it) **if** the Oct 23 paycheck lands before the autopays pull.
 - It does **not** work day to day: with ComEd paid in full on Oct 26, checking is negative from Oct 26 to Nov 5, bottoming at **-$526** on Nov 1. You already hit overdraft on Oct 13.
 - The $1,960.91 backlog (Arivo Oct, water, garbage, ComEd current, Xfinity internet) is paid **after** the Nov 6 paycheck, split across Nov 6-10 (small bills) and Nov 20 (Arivo Oct).
-- Mortgage is **autopay $1,548.91 on Oct 23**. Nov date assumed Nov 23 - confirm.
+- Mortgage is **autopay $1,548.91 on Oct 23 and Nov 20** (both are paydays - paycheck must post before the draw).
 - Starting balance is real: checking $422.95, savings $29.32 (Oct 16).
 
 ## Priority order (consequence if missed)
-1. **Mortgage $1,548.91** - modification fails if missed. Autopay Oct 23. Make sure the paycheck is in before the draw (payday is also Oct 23), keep the exact amount, **one payment per month**. Ask the servicer for the Nov date and the Oct receipt cutoff.
+1. **Mortgage $1,548.91** - modification fails if missed. Autopay Oct 23. Make sure the paycheck is in before the draw (payday is also Oct 23), keep the exact amount, **one payment per month**. Ask the servicer for the receipt cutoff for each month.
 2. **ComEd $690.31 by Oct 28** - shutoff. Pay Oct 26 or get a payment arrangement / energy assistance first.
 3. **Autopays** (Nicor, Xfinity Mobile, Dave, Earnin, Brigit, Capital One) - they fire on schedule; keep money in account.
 4. **Arivo $952.17** (due 10/20, manual) - largest backlog item; call for a due-date change or one-payment deferral.
@@ -55,8 +55,8 @@ Date       Item                                                     Amount     B
 2026-11-20 PAYCHECK (JLL)                                         2,604.28    4,272.40
 2026-11-20 Zelle to wife                                           -150.00    4,122.40
 2026-11-20 Arivo loan - November                                   -952.17    3,170.23
-2026-11-21 Xfinity Mobile (autopay)                                -167.85    3,002.38
-2026-11-23 MORTGAGE - November (autopay on 23rd assumed)         -1,548.91    1,453.47
+2026-11-20 MORTGAGE - November (autopay, modification)           -1,548.91    1,621.32
+2026-11-21 Xfinity Mobile (autopay)                                -167.85    1,453.47
 2026-11-23 Brigit Plus + Crunchyroll                                -18.98    1,434.49
 
 Lowest balance: $-526.02 on 2026-11-01
@@ -72,7 +72,7 @@ Unscheduled backlog: $1,960.91  ->  net after backlog: $-526.42
 ## Calls to make (before payday)
 | Who | Ask |
 |---|---|
-| Mortgage servicer | Confirm $1,548.91 autopay on Oct 23, the Nov date, and the receipt cutoff; ask for it in writing. |
+| Mortgage servicer | Confirm $1,548.91 autopay on Oct 23 and Nov 20 and the receipt cutoff; ask for it in writing. |
 | ComEd (800-EDISON1 per ComEd's flyer) | Deferred payment arrangement on the $1,011.95 balance; confirm shutoff date and winter protections. |
 | Illinois LIHEAP via CEDA Cook County (800-571-2332) | Apply now; households with a disconnect notice can apply. |
 | Arivo | Move due date to ~25th (after payday) or defer the Oct payment; ask about late fee/grace. |
@@ -88,7 +88,7 @@ If ComEd must be paid in full: bridge with Grant ($250) + Thrive (up to $500), r
 - Recurring extras to review: Prime Video $19.99, Claude $22.05, Crunchyroll $9.99, Blizzard ~$16 (maybe two charges), GitHub ~$29 extra, American Dance $192.62 biweekly (~$417/mo).
 
 ## Open questions
-Mortgage servicer, Nov mortgage date, Arivo grace/late fee, what GitHub's extra ~$29 is, Uphold -> BoA transfer method/time, savings balance in acct 8937, Capital One / Walmart / Upstart APRs.
+Mortgage servicer, Arivo grace/late fee, what GitHub's extra ~$29 is, Uphold -> BoA transfer method/time, savings balance in acct 8937, Capital One / Walmart / Upstart APRs.
 
 Sources: [CUB: ComEd/Illinois utility protections](https://www.citizensutilityboard.org/covid-19-protections-for-utility-customers/) (older; confirm current terms with ComEd) - [Illinois LIHEAP: how to apply](https://dceo.illinois.gov/communityservices/utilitybillassistance/howtoapply.html) - [Mr. Cooper trial-plan tips](https://www.mrcooper.com/help-center/mortgage-assistance/trial-period-plan-success) (one servicer's rules; yours may differ)
 

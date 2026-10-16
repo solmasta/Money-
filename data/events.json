@@ -202,8 +202,8 @@
       "kind": "auto"
     },
     {
-      "d": "2026-11-23",
-      "label": "MORTGAGE - November (autopay on 23rd assumed)",
+      "d": "2026-11-20",
+      "label": "MORTGAGE - November (autopay, modification)",
       "amt": -1548.91,
       "kind": "auto"
     },
@@ -236,5 +236,5 @@
       "amt": 170.34
     }
   ],
-  "note": "Horizon extended to Nov 23. Mortgage Nov 23 date is an assumption."
+  "note": "Horizon extended to Nov 23."
 }
