@@ -59,9 +59,9 @@
     },
     {
       "d": "2026-10-23",
-      "label": "MORTGAGE - October (modification)",
-      "amt": -1591.0,
-      "kind": "manual"
+      "label": "MORTGAGE - October (autopay, modification)",
+      "amt": -1548.91,
+      "kind": "auto"
     },
     {
       "d": "2026-10-23",
@@ -142,12 +142,6 @@
       "kind": "manual"
     },
     {
-      "d": "2026-11-06",
-      "label": "MORTGAGE - November (modification; due date TBD)",
-      "amt": -1591.0,
-      "kind": "manual"
-    },
-    {
       "d": "2026-11-10",
       "label": "American Dance (autopay)",
       "amt": -192.62,
@@ -169,6 +163,54 @@
       "d": "2026-11-14",
       "label": "Upstart $1,500 loan (autopay)",
       "amt": -50.71,
+      "kind": "auto"
+    },
+    {
+      "d": "2026-11-18",
+      "label": "Uphold deposit -> move to BoA",
+      "amt": 250.0,
+      "kind": "income"
+    },
+    {
+      "d": "2026-11-19",
+      "label": "Nicor Gas (autopay)",
+      "amt": -106.0,
+      "kind": "auto"
+    },
+    {
+      "d": "2026-11-20",
+      "label": "PAYCHECK (JLL)",
+      "amt": 2604.28,
+      "kind": "income"
+    },
+    {
+      "d": "2026-11-20",
+      "label": "Zelle to wife",
+      "amt": -150.0,
+      "kind": "manual"
+    },
+    {
+      "d": "2026-11-20",
+      "label": "Arivo loan - November",
+      "amt": -952.17,
+      "kind": "manual"
+    },
+    {
+      "d": "2026-11-21",
+      "label": "Xfinity Mobile (autopay)",
+      "amt": -167.85,
+      "kind": "auto"
+    },
+    {
+      "d": "2026-11-23",
+      "label": "MORTGAGE - November (autopay on 23rd assumed)",
+      "amt": -1548.91,
+      "kind": "auto"
+    },
+    {
+      "d": "2026-11-23",
+      "label": "Brigit Plus + Crunchyroll",
+      "amt": -18.98,
       "kind": "auto"
     }
   ],
@@ -193,5 +235,6 @@
       "label": "Xfinity internet (was due 10/14)",
       "amt": 170.34
     }
-  ]
+  ],
+  "note": "Horizon extended to Nov 23. Mortgage Nov 23 date is an assumption."
 }
