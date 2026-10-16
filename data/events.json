@@ -11,8 +11,8 @@
     },
     {
       "d": "2026-10-19",
-      "label": "GitHub (autopay, worst case $4 + usage)",
-      "amt": -33.0,
+      "label": "GitHub (autopay, $4/mo; old Copilot sub ended)",
+      "amt": -4.0,
       "kind": "auto"
     },
     {
@@ -193,6 +193,12 @@
       "d": "2026-11-23",
       "label": "Brigit Plus + Crunchyroll",
       "amt": -18.98,
+      "kind": "auto"
+    },
+    {
+      "d": "2026-11-19",
+      "label": "GitHub (autopay)",
+      "amt": -4.0,
       "kind": "auto"
     }
   ],
