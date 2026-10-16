@@ -1,0 +1,21 @@
+{
+  "name": "Recommended plan",
+  "remove_prefix": ["ComEd past due"],
+  "add": [
+    {"d":"2026-10-26","label":"ComEd payment arrangement: DOWN PAYMENT (assumed $200; confirm with ComEd)","amt":-200.00,"kind":"manual"},
+    {"d":"2026-10-25","label":"Grant advance IN","amt":250.00,"kind":"loan"},
+    {"d":"2026-10-30","label":"Thrive advance IN","amt":300.00,"kind":"loan"},
+    {"d":"2026-11-06","label":"Repay Grant","amt":-250.00,"kind":"loan"},
+    {"d":"2026-11-06","label":"Repay Thrive","amt":-300.00,"kind":"loan"},
+    {"d":"2026-11-06","label":"Advance fees allowance (unknown)","amt":-10.00,"kind":"loan"},
+    {"d":"2026-11-06","label":"Xfinity internet (backlog)","amt":-170.34,"kind":"manual"},
+    {"d":"2026-11-09","label":"ComEd current bill (backlog)","amt":-321.64,"kind":"manual"},
+    {"d":"2026-11-09","label":"Garbage - quarterly (backlog)","amt":-141.57,"kind":"manual"},
+    {"d":"2026-11-13","label":"Water (backlog)","amt":-375.19,"kind":"manual"},
+    {"d":"2026-11-13","label":"Late fees allowance (unknown)","amt":-75.00,"kind":"manual"}
+  ],
+  "backlog": [
+    {"label":"Arivo October - deferral requested (pay at end of loan or split over Dec)","amt":952.17},
+    {"label":"ComEd arrangement installments (~$490 over ~4 months, from late Nov)","amt":490.31}
+  ]
+}
